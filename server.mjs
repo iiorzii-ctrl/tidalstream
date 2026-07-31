@@ -1,0 +1,147 @@
+import { createServer } from 'node:http';
+import { readFile } from 'node:fs/promises';
+import { extname, join, normalize } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+import { DEFAULTS, PAGE_URL } from './src/config.mjs';
+import { HttpError, fetchImage, fetchPage } from './src/fetcher.mjs';
+import { collectFrames, nowInTokyo } from './src/frames.mjs';
+import { buildPageUrl, discoverForm, extractImageCandidates } from './src/scraper.mjs';
+
+const PUBLIC_DIR = fileURLToPath(new URL('./public/', import.meta.url));
+const PORT = Number(process.env.PORT ?? 3000);
+const HOST = process.env.HOST ?? '127.0.0.1';
+
+const MIME = {
+  '.html': 'text/html; charset=utf-8',
+  '.css': 'text/css; charset=utf-8',
+  '.js': 'text/javascript; charset=utf-8',
+  '.svg': 'image/svg+xml',
+  '.ico': 'image/x-icon',
+};
+
+const server = createServer(async (req, res) => {
+  const url = new URL(req.url ?? '/', `http://${req.headers.host ?? 'localhost'}`);
+  try {
+    if (req.method !== 'GET' && req.method !== 'HEAD') {
+      throw new HttpError(405, 'GET のみ対応しています');
+    }
+    if (url.pathname === '/api/frames') return await handleFrames(url, res);
+    if (url.pathname === '/api/image') return await handleImage(url, res);
+    if (url.pathname === '/api/debug') return await handleDebug(url, res);
+    return await handleStatic(url, res);
+  } catch (error) {
+    const status = error instanceof HttpError ? error.status : 500;
+    if (status >= 500) console.error(`[${status}] ${url.pathname}: ${error?.stack ?? error}`);
+    sendJson(res, status, { error: error?.message ?? String(error) });
+  }
+});
+
+async function handleFrames(url, res) {
+  const area = url.searchParams.get('area') || DEFAULTS.area;
+  const count = clampInt(url.searchParams.get('count'), DEFAULTS.count, 1, 12);
+  const stepHours = clampInt(url.searchParams.get('step'), DEFAULTS.stepHours, 1, 24);
+  const start = parseStart(url.searchParams);
+
+  const result = await collectFrames({ area, start, count, stepHours });
+
+  // 画像は自前のプロキシ経由で出す（Referer 制限とキャッシュのため）
+  for (const frame of result.frames) {
+    frame.proxiedImageUrl = frame.imageUrl ? proxyUrlFor(frame.imageUrl, frame.pageUrl) : null;
+    for (const candidate of frame.candidates) {
+      candidate.proxiedUrl = proxyUrlFor(candidate.url, frame.pageUrl);
+    }
+  }
+
+  sendJson(res, 200, result);
+}
+
+async function handleImage(url, res) {
+  const target = url.searchParams.get('u');
+  if (!target) throw new HttpError(400, 'u パラメータが必要です');
+  const referer = url.searchParams.get('r') || PAGE_URL;
+
+  const image = await fetchImage(target, { referer });
+  res.writeHead(200, {
+    'content-type': image.contentType,
+    'content-length': image.buffer.length,
+    'cache-control': 'public, max-age=900',
+    'x-upstream-cache': image.cached ? 'hit' : 'miss',
+  });
+  res.end(image.buffer);
+}
+
+/** 上流ページの構造をそのまま見るための確認用エンドポイント */
+async function handleDebug(url, res) {
+  const area = url.searchParams.get('area') || DEFAULTS.area;
+  const pageUrl = buildPageUrl({ form: null, area, baseUrl: PAGE_URL });
+  const page = await fetchPage(pageUrl);
+  const form = discoverForm(page.html);
+
+  sendJson(res, 200, {
+    pageUrl,
+    charset: page.charset,
+    htmlLength: page.html.length,
+    form,
+    images: extractImageCandidates(page.html, page.url),
+    htmlHead: page.html.slice(0, 4000),
+  });
+}
+
+async function handleStatic(url, res) {
+  const requested = url.pathname === '/' ? '/index.html' : url.pathname;
+  const safePath = normalize(requested).replace(/^(\.\.[/\\])+/, '');
+  const filePath = join(PUBLIC_DIR, safePath);
+  if (!filePath.startsWith(PUBLIC_DIR)) throw new HttpError(403, 'アクセスできません');
+
+  let body;
+  try {
+    body = await readFile(filePath);
+  } catch {
+    throw new HttpError(404, `見つかりません: ${url.pathname}`);
+  }
+  res.writeHead(200, {
+    'content-type': MIME[extname(filePath)] ?? 'application/octet-stream',
+    'cache-control': 'no-cache',
+  });
+  res.end(body);
+}
+
+function proxyUrlFor(imageUrl, referer) {
+  return `/api/image?u=${encodeURIComponent(imageUrl)}&r=${encodeURIComponent(referer)}`;
+}
+
+function parseStart(params) {
+  const date = params.get('date');
+  const hour = params.get('hour');
+  if (!date) return hour === null ? undefined : { ...nowInTokyo(), hour: clampInt(hour, 0, 0, 23) };
+
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(date);
+  if (!m) throw new HttpError(400, 'date は YYYY-MM-DD 形式で指定してください');
+  return {
+    year: Number(m[1]),
+    month: Number(m[2]),
+    day: Number(m[3]),
+    hour: clampInt(hour, nowInTokyo().hour, 0, 23),
+  };
+}
+
+function clampInt(value, fallback, min, max) {
+  const n = Number.parseInt(String(value ?? ''), 10);
+  if (!Number.isFinite(n)) return fallback;
+  return Math.min(max, Math.max(min, n));
+}
+
+function sendJson(res, status, payload) {
+  const body = Buffer.from(JSON.stringify(payload, null, 2), 'utf8');
+  res.writeHead(status, {
+    'content-type': 'application/json; charset=utf-8',
+    'content-length': body.length,
+    'cache-control': 'no-store',
+  });
+  res.end(body);
+}
+
+server.listen(PORT, HOST, () => {
+  console.log(`tidalstream → http://${HOST}:${PORT}`);
+});

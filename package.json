@@ -1,0 +1,15 @@
+{
+  "name": "tidalstream",
+  "version": "1.0.0",
+  "private": true,
+  "description": "海上保安庁 潮流推算ページの図を1時間ごとに3枚横並びで表示するビューア",
+  "type": "module",
+  "main": "server.mjs",
+  "scripts": {
+    "start": "node server.mjs",
+    "debug:page": "node scripts/inspect.mjs"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

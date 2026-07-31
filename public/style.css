@@ -1,0 +1,200 @@
+:root {
+  color-scheme: light dark;
+  --bg: #f6f7f9;
+  --panel: #ffffff;
+  --ink: #14181f;
+  --muted: #5c6672;
+  --line: #d9dee5;
+  --accent: #12608f;
+  --error: #b3261e;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #14181d;
+    --panel: #1c2229;
+    --ink: #e8ecf1;
+    --muted: #9aa5b1;
+    --line: #2e3742;
+    --accent: #6fb6e6;
+    --error: #ef9a93;
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  padding: 1rem clamp(0.75rem, 3vw, 2rem) 3rem;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: system-ui, -apple-system, 'Hiragino Kaku Gothic ProN', 'Noto Sans JP', sans-serif;
+  line-height: 1.6;
+}
+
+.bar h1 {
+  margin: 0;
+  font-size: 1.25rem;
+}
+
+.note,
+.foot {
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem 1rem;
+  align-items: flex-end;
+  margin: 1rem 0;
+  padding: 0.9rem 1rem;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+}
+
+.controls label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+.controls label.check {
+  flex-direction: row;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.controls input,
+.controls select,
+.controls button {
+  font: inherit;
+  font-size: 0.9rem;
+  padding: 0.35rem 0.5rem;
+  color: var(--ink);
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+}
+
+.controls button {
+  cursor: pointer;
+  background: var(--accent);
+  border-color: transparent;
+  color: #fff;
+  padding-inline: 1rem;
+}
+
+.controls button#now {
+  background: transparent;
+  color: var(--accent);
+  border-color: var(--line);
+}
+
+.status {
+  min-height: 1.5rem;
+  margin: 0 0 0.75rem;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.status[data-kind='error'] {
+  color: var(--error);
+}
+
+.status[data-kind='warn'] {
+  color: #b26a00;
+}
+
+/* 本題: 指定枚数を横一列に並べる */
+.frames {
+  display: grid;
+  grid-template-columns: repeat(var(--columns, 3), minmax(0, 1fr));
+  gap: 1rem;
+  align-items: start;
+}
+
+@media (max-width: 900px) {
+  .frames {
+    grid-template-columns: 1fr;
+  }
+}
+
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.panel-head {
+  padding: 0.5rem 0.75rem;
+  border-bottom: 1px solid var(--line);
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.panel-body {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 180px;
+  padding: 0.5rem;
+}
+
+.panel-body img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+
+.panel.skeleton .panel-body {
+  background: linear-gradient(90deg, transparent, rgba(128, 128, 128, 0.15), transparent);
+  background-size: 200% 100%;
+  animation: shimmer 1.2s infinite;
+}
+
+@keyframes shimmer {
+  from {
+    background-position: 200% 0;
+  }
+  to {
+    background-position: -200% 0;
+  }
+}
+
+.error {
+  margin: 0;
+  padding: 1rem;
+  color: var(--error);
+  font-size: 0.85rem;
+  text-align: center;
+}
+
+.candidates {
+  padding: 0.4rem 0.75rem 0.6rem;
+  border-top: 1px solid var(--line);
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+
+.candidates select {
+  font: inherit;
+  max-width: 100%;
+  margin-left: 0.25rem;
+  color: var(--ink);
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 5px;
+}
+
+a {
+  color: var(--accent);
+}
