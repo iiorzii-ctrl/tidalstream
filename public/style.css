@@ -112,17 +112,22 @@ body {
   color: #b26a00;
 }
 
-/* 本題: 指定枚数を横一列に並べる */
+/* 本題: 指定枚数を横一列に並べる。
+   枚数が多くて幅が足りないときは、図を潰さずにこの枠内だけ横スクロールさせる。 */
 .frames {
   display: grid;
-  grid-template-columns: repeat(var(--columns, 3), minmax(0, 1fr));
+  grid-template-columns: repeat(var(--columns, 3), minmax(260px, 1fr));
   gap: 1rem;
   align-items: start;
+  overflow-x: auto;
+  padding-bottom: 0.5rem;
 }
 
+/* 縦に並べたほうが見やすい幅では1列にする */
 @media (max-width: 900px) {
   .frames {
     grid-template-columns: 1fr;
+    overflow-x: visible;
   }
 }
 
