@@ -1,11 +1,16 @@
+/* 配色は素材である海図から取る。
+   海の淡いシアン、陸の砂色、図の細い黒罫線。中間色は青に寄せて、
+   汎用のグレーに見えないようにする。 */
 :root {
   color-scheme: light dark;
-  --bg: #f6f7f9;
+  --bg: #eaf0f4;
   --panel: #ffffff;
-  --ink: #14181f;
-  --muted: #5c6672;
-  --line: #d9dee5;
-  --accent: #12608f;
+  --ink: #0d2233;
+  --muted: #55707f;
+  --line: #ccd9e1;
+  --rule: #0d2233; /* 図の罫線に合わせた濃い線。見出しの下などに使う */
+  --sea: #e4f2f8; /* 図の海の色 */
+  --accent: #0f5c86;
   --error: #b3261e;
 
   /* グラフ用。単一系列なので系列色は1つだけ使う。
@@ -20,11 +25,13 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --bg: #14181d;
-    --panel: #1c2229;
-    --ink: #e8ecf1;
-    --muted: #9aa5b1;
-    --line: #2e3742;
+    --bg: #0a151e;
+    --panel: #12212c;
+    --ink: #e3edf3;
+    --muted: #90a7b5;
+    --line: #24384a;
+    --rule: #7d99aa;
+    --sea: #16303f;
     --accent: #6fb6e6;
     --error: #ef9a93;
 
@@ -56,29 +63,56 @@ body {
   line-height: 1.6;
 }
 
-.bar h1 {
-  margin: 0;
-  font-size: 1.25rem;
+/* 海図の標題欄（タイトルカルトゥーシュ）を意識した見出し。
+   細い罫線と、字間を空けた小さな肩見出しで構成する。 */
+.bar {
+  margin-bottom: 1.25rem;
+  padding-bottom: 0.6rem;
+  border-bottom: 2px solid var(--rule);
 }
 
-/* 見出しと言語切り替えを同じ行に並べ、切り替えは右端に置く */
 .bar-row {
   display: flex;
-  align-items: center;
+  align-items: flex-end;
   justify-content: space-between;
   gap: 1rem;
 }
 
+.bar-title {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.eyebrow {
+  margin: 0;
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  color: var(--muted);
+}
+
+.bar h1 {
+  margin: 0;
+  font-size: clamp(1.6rem, 1.15rem + 1.9vw, 2.4rem);
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  line-height: 1.15;
+  text-wrap: balance;
+}
+
+/* 図の中の囲みラベルに合わせて、角丸なしの細い枠にする */
 .lang-toggle {
   font: inherit;
   font-size: 0.875rem;
-  padding: 0.3rem 0.75rem;
-  color: var(--accent);
+  padding: 0.3rem 0.8rem;
+  color: var(--ink);
   background: var(--panel);
-  border: 1px solid var(--line);
-  border-radius: 999px;
+  border: 1px solid var(--rule);
+  border-radius: 2px;
   cursor: pointer;
   white-space: nowrap;
+  letter-spacing: 0.04em;
 }
 
 .lang-toggle:hover,
@@ -103,18 +137,20 @@ body {
   flex-wrap: wrap;
   gap: 0.75rem 1rem;
   align-items: flex-end;
-  margin: 1rem 0;
-  padding: 0.9rem 1rem;
+  margin: 0 0 0.9rem;
+  padding: 0.75rem 0.9rem;
   background: var(--panel);
   border: 1px solid var(--line);
-  border-radius: 10px;
+  border-radius: 3px;
 }
 
 .controls label {
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
-  font-size: 0.875rem;
+  gap: 0.3rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
   color: var(--muted);
 }
 
@@ -128,20 +164,21 @@ body {
 .controls select,
 .controls button {
   font: inherit;
-  font-size: 0.9rem;
+  font-size: 0.95rem;
   padding: 0.35rem 0.5rem;
   color: var(--ink);
   background: var(--bg);
   border: 1px solid var(--line);
-  border-radius: 6px;
+  border-radius: 3px;
 }
 
 .controls button {
   cursor: pointer;
   background: var(--accent);
-  border-color: transparent;
+  border-color: var(--accent);
   color: #fff;
-  padding-inline: 1rem;
+  padding-inline: 1.1rem;
+  letter-spacing: 0.04em;
 }
 
 .controls button#now,
@@ -188,16 +225,18 @@ body {
 .panel {
   background: var(--panel);
   border: 1px solid var(--line);
-  border-radius: 10px;
+  border-radius: 3px;
   overflow: hidden;
 }
 
 .panel-head {
-  padding: 0.5rem 0.75rem;
-  border-bottom: 1px solid var(--line);
+  padding: 0.45rem 0.75rem;
+  border-bottom: 1px solid var(--rule);
+  background: var(--sea);
   font-variant-numeric: tabular-nums;
   font-weight: 600;
   font-size: 0.95rem;
+  letter-spacing: 0.03em;
 }
 
 .panel-body {
@@ -361,7 +400,8 @@ a {
   padding: 0.9rem 1rem 1rem;
   background: var(--panel);
   border: 1px solid var(--line);
-  border-radius: 10px;
+  border-top: 2px solid var(--rule);
+  border-radius: 3px;
 }
 
 .point-head {
@@ -374,7 +414,8 @@ a {
 
 .point-head h2 {
   margin: 0;
-  font-size: 1rem;
+  font-size: 1.15rem;
+  letter-spacing: -0.01em;
 }
 
 .point-actions {
@@ -391,11 +432,11 @@ a {
 .button-link {
   font: inherit;
   font-size: 0.875rem;
-  padding: 0.3rem 0.6rem;
+  padding: 0.32rem 0.7rem;
   color: var(--ink);
   background: var(--bg);
   border: 1px solid var(--line);
-  border-radius: 6px;
+  border-radius: 3px;
   cursor: pointer;
   text-decoration: none;
 }
@@ -414,9 +455,11 @@ a {
 
 .arrow-strip-label {
   display: block;
-  font-size: 0.85rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
   color: var(--muted);
-  margin-bottom: 0.35rem;
+  margin-bottom: 0.4rem;
 }
 
 .arrow-crops {
@@ -436,8 +479,8 @@ a {
 .arrow-crop-view {
   width: 120px;
   height: 120px;
-  border: 1px solid var(--line);
-  border-radius: 8px;
+  border: 1px solid var(--rule);
+  border-radius: 2px;
   background-repeat: no-repeat;
   /* 選んだ地点が枠の中央に来る。枠の大きさが変わっても崩れない */
   background-position: calc(50% - var(--point-x, 0px)) calc(50% - var(--point-y, 0px));
@@ -658,9 +701,29 @@ a {
     display: none !important;
   }
 
+  /* 紙では見出し周りを詰める（画面ほど余白を取らない） */
+  .bar {
+    margin-bottom: 3mm;
+    padding-bottom: 1.5mm;
+    border-bottom: 0.5mm solid #000;
+  }
+
   .bar h1 {
     font-size: 15pt;
-    margin-bottom: 1mm;
+    margin-bottom: 0;
+  }
+
+  .eyebrow {
+    font-size: 8.5pt;
+    letter-spacing: 0.1em;
+  }
+
+  .point {
+    border-top: 0.5mm solid #000;
+  }
+
+  .panel-head {
+    background: transparent;
   }
 
   .note {

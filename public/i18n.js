@@ -6,6 +6,7 @@
 const STRINGS = {
   ja: {
     'app.title': '潮流推算ビューア',
+    'app.eyebrow': '海上保安庁 海洋情報部',
     'app.lede': '海上保安庁「潮流推算」ページの図を、指定時刻から1時間ごとに横並びで表示します。',
     'lang.toggle': 'English',
     'lang.toggleAria': 'Switch to English',
@@ -61,6 +62,7 @@ const STRINGS = {
 
   en: {
     'app.title': 'Tidal Current Viewer',
+    'app.eyebrow': 'Japan Coast Guard · Hydrographic Department',
     'app.lede':
       'Shows charts from the Japan Coast Guard tidal current prediction page, side by side at hourly steps.',
     'lang.toggle': '日本語',
