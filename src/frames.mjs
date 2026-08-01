@@ -67,7 +67,8 @@ export async function collectFrames({
     times.map(async (time) => {
       const pageUrl = buildPageUrl({ form, area, ...time, baseUrl: PAGE_URL });
       try {
-        const page = await fetchPage(pageUrl, { referer: basePageUrl });
+        // 日時を指定したページは結果が変わらないので、ディスクにも残す
+        const page = await fetchPage(pageUrl, { referer: basePageUrl, persist: true });
         const candidates = extractImageCandidates(page.html, page.url);
         const stations = extractStations(page.html);
         return {
@@ -129,7 +130,8 @@ export async function collectSeries({
     times.map(async (time) => {
       const pageUrl = buildPageUrl({ form, area, ...time, baseUrl: PAGE_URL });
       try {
-        const page = await fetchPage(pageUrl, { referer: basePageUrl });
+        // 日時を指定したページは結果が変わらないので、ディスクにも残す
+        const page = await fetchPage(pageUrl, { referer: basePageUrl, persist: true });
         const stations = extractStations(page.html);
         const hit = nearestStation(stations, x, y);
         return {

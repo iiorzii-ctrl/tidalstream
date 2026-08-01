@@ -133,7 +133,7 @@ async function handleImage(url, res) {
     'content-type': image.contentType,
     'content-length': image.buffer.length,
     'cache-control': 'public, max-age=900',
-    'x-upstream-cache': image.cached ? 'hit' : 'miss',
+    'x-upstream-cache': image.cached || 'miss', // memory / disk / miss
   });
   res.end(image.buffer);
 }

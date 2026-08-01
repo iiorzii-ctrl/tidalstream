@@ -87,7 +87,7 @@ test('同じ URL は再取得しない（キャッシュ）', async () => {
   await fetcher.fetchImage(url, { referer: stub.pageUrl });
   const before = stub.requests.length;
   const second = await fetcher.fetchImage(url, { referer: stub.pageUrl });
-  assert.equal(second.cached, true);
+  assert.equal(second.cached, 'memory');
   assert.equal(stub.requests.length, before);
 });
 
