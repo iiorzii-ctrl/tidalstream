@@ -71,10 +71,6 @@ export function renderSeriesChart(container, series) {
     label.textContent = String(p.hour).padStart(2, '0');
     svg.append(label);
   });
-  const axisNote = el('text', { x: width - PAD.right, y: height - 10, class: 'chart-tick', 'text-anchor': 'end' });
-  axisNote.textContent = '時（JST）';
-  svg.append(axisNote);
-
   svg.append(
     el('line', {
       x1: PAD.left,
@@ -178,7 +174,12 @@ export function renderSeriesChart(container, series) {
     e.preventDefault();
   });
 
-  container.append(svg, tooltip);
+  // 軸の単位は目盛りの中に置くと右端のラベルと重なるので、図の外に出す
+  const caption = document.createElement('p');
+  caption.className = 'chart-caption';
+  caption.textContent = '横軸: 時（日本時間）／縦軸: 流速（ノット）';
+
+  container.append(svg, caption, tooltip);
 }
 
 /** ツールチップに頼らずに値へ到達できるようにするための表 */

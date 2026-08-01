@@ -424,9 +424,21 @@ a {
   stroke-width: 1;
 }
 
+.chart-caption {
+  margin: 0.25rem 0 0;
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+
 .chart-svg [tabindex]:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
+}
+
+/* display を指定すると [hidden] のブラウザ既定より優先されてしまうので、
+   非表示を明示する（これが無いと中身の空のツールチップが描画されたままになる） */
+.chart-tooltip[hidden] {
+  display: none;
 }
 
 .chart-tooltip {

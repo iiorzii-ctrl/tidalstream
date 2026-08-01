@@ -22,6 +22,8 @@ const CANDIDATE_KEY = 'tidalstream.candidateIndex';
 const POINT_KEY = 'tidalstream.point';
 let candidateIndex = Number(localStorage.getItem(CANDIDATE_KEY) ?? 0) || 0;
 let selectedPoint = readSelectedPoint();
+// 推移を表示している海域。座標は海域ごとの画像に紐づくので、海域が変われば選択は無効になる
+let pointArea = selectedPoint?.area ?? null;
 let autoRefreshTimer = null;
 let inFlight = null;
 let seriesInFlight = null;
@@ -117,6 +119,12 @@ async function load() {
     const data = await response.json();
     if (!response.ok) throw new Error(data.error ?? `HTTP ${response.status}`);
     render(data);
+
+    // 地点の座標は海域ごとの画像に紐づくので、海域が変わったら選択を持ち越さない。
+    // 同じ海域で日時だけ変えた場合は、推移も新しい日時で取り直す。
+    if (selectedPoint && pointArea && pointArea !== data.area) clearPoint();
+    else if (selectedPoint) loadSeries();
+
     const failed = data.frames.filter((f) => !f.imageUrl).length;
     const where = data.areaLabel ? `${data.areaLabel}／` : '';
     setStatus(
@@ -236,8 +244,9 @@ function renderStations(stage, img, frame) {
 }
 
 function selectPoint(point) {
-  selectedPoint = point;
-  localStorage.setItem(POINT_KEY, JSON.stringify(point));
+  selectedPoint = { ...point, area: areaEl.value };
+  pointArea = areaEl.value;
+  localStorage.setItem(POINT_KEY, JSON.stringify(selectedPoint));
   document.querySelectorAll('.station').forEach((dot) => {
     dot.classList.toggle('is-selected', dot.dataset.id === `${point.x},${point.y}`);
   });
@@ -246,6 +255,7 @@ function selectPoint(point) {
 
 function clearPoint() {
   selectedPoint = null;
+  pointArea = null;
   localStorage.removeItem(POINT_KEY);
   document.querySelectorAll('.station.is-selected').forEach((d) => d.classList.remove('is-selected'));
   pointSection.hidden = true;
@@ -277,6 +287,7 @@ async function loadSeries() {
     pointStats.textContent = data.stats
       ? `最大 ${data.stats.max.toFixed(1)}kn（${data.stats.peakAt}）／最小 ${data.stats.min.toFixed(1)}kn／平均 ${data.stats.mean.toFixed(2)}kn`
       : '流速を取得できませんでした';
+    pointArea = data.area;
     renderSeriesChart(chartEl, data);
     renderSeriesTable(pointTable, data);
   } catch (error) {
@@ -354,6 +365,5 @@ document.getElementById('toggleTable').addEventListener('click', (event) => {
 
 await initAreas();
 initControls();
+// 前回選んだ地点があれば、load() の中で推移も復元される
 await load();
-// 前回選んだ地点があれば推移も復元する
-if (selectedPoint) loadSeries();
