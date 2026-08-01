@@ -1,6 +1,6 @@
 import { DEFAULTS, PAGE_URL } from './config.mjs';
 import { fetchPage } from './fetcher.mjs';
-import { buildPageUrl, discoverForm, extractImageCandidates } from './scraper.mjs';
+import { buildPageUrl, discoverForm, extractAreaLabel, extractImageCandidates } from './scraper.mjs';
 
 const TOKYO_TZ = 'Asia/Tokyo';
 
@@ -91,6 +91,7 @@ export async function collectFrames({
 
   return {
     area,
+    areaLabel: extractAreaLabel(basePage.html),
     stepHours,
     count,
     start: origin,

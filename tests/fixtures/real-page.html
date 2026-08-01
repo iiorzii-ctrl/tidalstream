@@ -1,0 +1,49 @@
+<html lang="ja">
+<HTML>
+<HEAD>
+<TITLE>潮流推算,Current predictin</TITLE>
+<META http-equiv=Content-Type content="text/html; charset=utf-8">
+<META http-equiv=Content-Style-Type content=text/css>
+</HEAD>
+<BODY background="../CurrPred/curr_data/kabegami1.jpg">
+    <!-- Information message empty for utf-8 -->
+    <FONT size=+1><B> <FONT color=#000000>潮流推算(Current prediction)　　</FONT></B></FONT>
+<font size=-1><br><nobr>（推算海域は「潮流推算海域図」ウィンドウより選択して下さい。）</nobr></font><BR><BR>
+    <B>推算海域(area)：東京湾, Tokyowan</B><BR>
+　　<nobr>（推算年,月,日,時を入力して下さい。）（有効期間：西暦元年～西暦2200年）</nobr><br>
+　<nobr>　　　　　　　　　　　　　　　　　　　　(1582年10月4日以前はユリウス暦を用い、以降はその翌日を</nobr><br>
+　<nobr>　　　　　　　　　　　　　　　　　　　　10月15日としたグレゴリオ暦を用いています。)</nobr><br><br>
+　　<nobr> Input year,month,day,hour. (Valid period: AD1 to AD2200, used Julius day）</nobr><br>
+<br>
+<FORM name=tide_out action="CurrPredCgi_K.cgi" method=get >
+<TABLE width=950>
+  <TBODY> 
+  <TR>
+    <TH align=left width=949 height=19>日時　
+  <SCRIPT LANGUAGE="JavaScript">
+      <!--
+        document.write("<input type=hidden name=area value=\"01\">");
+        document.write("<input type=text style=\"text-align:right\" size=1 name=year  value=2026>年　");
+        document.write("<input type=text style=\"text-align:right\" size=1 name=month  value=8>月　");
+        document.write("<input type=text style=\"text-align:right\" size=1 name=day  value=1>日　");
+        document.write("<input type=text style=\"text-align:right\" size=1 name=hour  value=9>時　　　");
+        document.write("<INPUT type=submit  size=2 value=\"推算\">"); 
+        document.write("<br>　　　　　　　　　　　　　　　　　　　　　　　 predict"); 
+        document.write("<BR>　　　　　　"); 
+        document.write("<INPUT type=button size=4 value=\"１時間前\" OnClick=\"location.href='CurrPredCgi_K.cgi?area=01&year=2026&month=8&day=1&hour=8'\">"); 
+        document.write("　　　　"); 
+        document.write("<INPUT type=button size=4 value=\"１時間後\" OnClick=\"location.href='CurrPredCgi_K.cgi?area=01&year=2026&month=8&day=1&hour=10'\">"); 
+        document.write("<br>　　　　　before 1hour　 after 1hour"); 
+      // -->  
+  </SCRIPT>  
+</TH></TR></TBODY></TABLE></FORM>
+       マウスを流況矢符の中心付近で静止すると流速値が参照できます。<br>
+       You can refer to the current velocity value by resting the mouse near the center of the any arrow.<br>
+      <img src="../CurrPred/curr_img/01_2026080109_.png" USEMAP="#StationMap">
+        <MAP name=StationMap>
+         <AREA coords=243,149,10 ALT="0.2kn." TITLE="0.2kn." shape=CIRCLE>
+         <AREA coords=371,198,10 ALT="0.2kn." TITLE="0.2kn." shape=CIRCLE>
+         <AREA coords=253,223,10 ALT="0.5kn." TITLE="0.5kn." shape=CIRCLE>
+        </MAP>
+      </img>
+</BODY></HTML>

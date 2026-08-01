@@ -30,6 +30,21 @@ function tokyoNow() {
   };
 }
 
+async function initAreas() {
+  try {
+    const { areas } = await (await fetch('/api/areas')).json();
+    for (const area of areas) {
+      const option = document.createElement('option');
+      option.value = area.code;
+      option.textContent = `${area.code} ${area.name}`;
+      areaEl.append(option);
+    }
+  } catch {
+    // 一覧が取れなくても既定の海域だけは選べるようにする
+    areaEl.innerHTML = '<option value="01">01 東京湾</option>';
+  }
+}
+
 function initControls() {
   for (let h = 0; h < 24; h += 1) {
     const option = document.createElement('option');
@@ -56,7 +71,7 @@ function setToNow() {
 
 function currentQuery() {
   return new URLSearchParams({
-    area: areaEl.value.trim() || '01',
+    area: areaEl.value || '01',
     date: dateEl.value,
     hour: hourEl.value,
     step: stepEl.value,
@@ -81,10 +96,11 @@ async function load() {
     if (!response.ok) throw new Error(data.error ?? `HTTP ${response.status}`);
     render(data);
     const failed = data.frames.filter((f) => !f.imageUrl).length;
+    const where = data.areaLabel ? `${data.areaLabel}／` : '';
     setStatus(
       failed === 0
-        ? `${data.frames.length}枚を表示しました（${data.stepHours}時間間隔・日本時間）`
-        : `${data.frames.length}枚中 ${failed}枚を取得できませんでした`,
+        ? `${where}${data.frames.length}枚を表示しました（${data.stepHours}時間間隔・日本時間）`
+        : `${where}${data.frames.length}枚中 ${failed}枚を取得できませんでした`,
       failed === 0 ? 'ok' : 'warn',
     );
   } catch (error) {
@@ -217,5 +233,6 @@ document.getElementById('now').addEventListener('click', () => {
 
 autoRefreshEl.addEventListener('change', scheduleAutoRefresh);
 
+await initAreas();
 initControls();
 load();

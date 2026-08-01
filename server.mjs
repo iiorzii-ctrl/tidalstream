@@ -3,7 +3,7 @@ import { readFile } from 'node:fs/promises';
 import { extname, join, normalize } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { DEFAULTS, PAGE_URL } from './src/config.mjs';
+import { AREAS, DEFAULTS, PAGE_URL } from './src/config.mjs';
 import { HttpError, fetchImage, fetchPage } from './src/fetcher.mjs';
 import { collectFrames, nowInTokyo } from './src/frames.mjs';
 import { buildPageUrl, discoverForm, extractImageCandidates } from './src/scraper.mjs';
@@ -26,6 +26,7 @@ const server = createServer(async (req, res) => {
     if (req.method !== 'GET' && req.method !== 'HEAD') {
       throw new HttpError(405, 'GET のみ対応しています');
     }
+    if (url.pathname === '/api/areas') return sendJson(res, 200, { areas: AREAS });
     if (url.pathname === '/api/frames') return await handleFrames(url, res);
     if (url.pathname === '/api/image') return await handleImage(url, res);
     if (url.pathname === '/api/debug') return await handleDebug(url, res);
