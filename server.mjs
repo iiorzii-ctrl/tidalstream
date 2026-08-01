@@ -3,6 +3,7 @@ import { readFile } from 'node:fs/promises';
 import { extname, join, normalize } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import { authEnabled, isAuthorized, warnIfExposed } from './src/auth.mjs';
 import { AREAS, DEFAULTS, PAGE_URL } from './src/config.mjs';
 import { HttpError, fetchImage, fetchPage } from './src/fetcher.mjs';
 import { collectFrames, collectSeries, nowInTokyo } from './src/frames.mjs';
@@ -23,6 +24,21 @@ const MIME = {
 const server = createServer(async (req, res) => {
   const url = new URL(req.url ?? '/', `http://${req.headers.host ?? 'localhost'}`);
   try {
+    // 死活監視は認証の対象外にする（ホスティング側のヘルスチェック用）。
+    // 内部の情報は返さない。
+    if (url.pathname === '/healthz') {
+      res.writeHead(200, { 'content-type': 'text/plain; charset=utf-8', 'cache-control': 'no-store' });
+      res.end('ok\n');
+      return;
+    }
+    if (!isAuthorized(req.headers.authorization)) {
+      res.writeHead(401, {
+        'www-authenticate': 'Basic realm="tidalstream", charset="UTF-8"',
+        'content-type': 'text/plain; charset=utf-8',
+      });
+      res.end('認証が必要です\n');
+      return;
+    }
     if (req.method !== 'GET' && req.method !== 'HEAD') {
       throw new HttpError(405, 'GET のみ対応しています');
     }
@@ -195,4 +211,7 @@ function sendJson(res, status, payload) {
 
 server.listen(PORT, HOST, () => {
   console.log(`tidalstream → http://${HOST}:${PORT}`);
+  console.log(authEnabled ? '認証: 有効（Basic 認証）' : '認証: なし');
+  const warning = warnIfExposed(HOST);
+  if (warning) console.warn(warning);
 });

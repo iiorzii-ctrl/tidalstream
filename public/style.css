@@ -244,6 +244,21 @@ body {
   background: rgba(255, 255, 255, 0.25);
 }
 
+/* iPad などホバーの無い端末では、ホバーで出す方式だと地点に永久にたどり着けない。
+   常に薄く表示して、タップできる場所が分かるようにする。 */
+@media (hover: none) {
+  .station::before {
+    border-color: rgba(11, 11, 11, 0.28);
+    background: rgba(255, 255, 255, 0.22);
+  }
+
+  .station:active::before {
+    border-color: var(--accent);
+    border-width: 2px;
+    background: rgba(255, 255, 255, 0.8);
+  }
+}
+
 .station:hover::before,
 .station:focus-visible::before {
   border-color: var(--accent);

@@ -1,0 +1,20 @@
+# Render 用の設定。リポジトリを繋ぐとこの内容で web サービスが作られる。
+# AUTH_USER / AUTH_PASS は Render の画面から値を入れる（sync: false のため）。
+services:
+  - type: web
+    name: tidalstream
+    runtime: node
+    plan: free
+    region: singapore # 上流が日本にあるので近いリージョンを選ぶ
+    buildCommand: 'echo "依存パッケージなし"'
+    startCommand: node server.mjs
+    healthCheckPath: /healthz
+    envVars:
+      - key: NODE_VERSION
+        value: '22'
+      - key: HOST
+        value: 0.0.0.0
+      - key: AUTH_USER
+        sync: false
+      - key: AUTH_PASS
+        sync: false
