@@ -31,6 +31,9 @@ function niceTicks(max) {
 let current = null;
 let lastWidth = 0;
 let observer = null;
+// 印刷用に描き直した直後は SVG の幅が変わるため、ResizeObserver が
+// 画面幅で描き直してしまう。印刷中は監視を止める。
+let printing = false;
 
 /**
  * 幅が変わったら描き直す。
@@ -38,19 +41,37 @@ let observer = null;
  * 変わってしまう（実測で PC 19px / iPhone 5px）。そこで viewBox を実際の
  * ピクセル幅に合わせ、常に等倍で描くことで文字サイズを一定に保つ。
  */
+// 印刷時のグラフの幅（横向き A4 で、矢印の列を除いた右側のおよその幅）。
+// 印刷レイアウトは画面の DOM を作り直さないので clientWidth は画面幅のまま。
+// そのため印刷直前にこの幅で描き直し、紙の上で等倍になるようにする。
+// 横向き A4 で、矢印の列を除いた右側の実寸（幅 約217mm = 820px、高さ 約31mm）。
+// 実際に印刷レイアウトで測った値。縦横比も枠に合わせないと、高さで頭打ちになって
+// 横に細くなってしまう。ここが紙の上での等倍になるので、文字も指定どおりの大きさになる。
+const PRINT_WIDTH = 820;
+const PRINT_HEIGHT = 118;
+
 function watchResize(container) {
   if (observer || typeof ResizeObserver === 'undefined') return;
   observer = new ResizeObserver(() => {
-    if (!current) return;
+    if (!current || printing) return;
     const width = Math.round(current.container.clientWidth);
     if (Math.abs(width - lastWidth) < 4) return; // 自分の描画で揺れるのを防ぐ
     draw(current.container, current.series);
   });
   observer.observe(container);
-  // 印刷時は紙幅に合わせて描き直す
-  window.matchMedia?.('print').addEventListener?.('change', () => {
+
+  const toPrint = () => {
+    printing = true;
+    if (current) draw(current.container, current.series, PRINT_WIDTH, PRINT_HEIGHT);
+  };
+  const toScreen = () => {
+    printing = false;
     if (current) draw(current.container, current.series);
-  });
+  };
+  window.addEventListener('beforeprint', toPrint);
+  window.addEventListener('afterprint', toScreen);
+  // 印刷プレビューを開いたままの変更にも追従する
+  window.matchMedia?.('print').addEventListener?.('change', (e) => (e.matches ? toPrint() : toScreen()));
 }
 
 export function renderSeriesChart(container, series) {
@@ -58,7 +79,7 @@ export function renderSeriesChart(container, series) {
   watchResize(container);
 }
 
-function draw(container, series) {
+function draw(container, series, forcedWidth, forcedHeight) {
   current = { container, series };
   container.innerHTML = '';
 
@@ -72,8 +93,8 @@ function draw(container, series) {
   }
 
   // viewBox を実寸に合わせるので、SVG 内の文字はそのままの px で表示される
-  const width = Math.round(Math.min(1600, Math.max(320, container.clientWidth || 900)));
-  const height = Math.round(Math.min(300, Math.max(190, width * 0.3)));
+  const width = forcedWidth ?? Math.round(Math.min(1600, Math.max(320, container.clientWidth || 900)));
+  const height = forcedHeight ?? Math.round(Math.min(300, Math.max(190, width * 0.3)));
   lastWidth = width;
   const plotW = width - PAD.left - PAD.right;
   const plotH = height - PAD.top - PAD.bottom;

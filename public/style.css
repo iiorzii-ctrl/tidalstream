@@ -654,8 +654,8 @@ a {
    ダークテーマで表示していても、紙は白地に統一する。
    ============================================================ */
 @page {
-  size: A4 portrait;
-  margin: 12mm 10mm;
+  size: A4 landscape;
+  margin: 9mm 10mm;
 }
 
 @media print {
@@ -709,7 +709,7 @@ a {
   }
 
   .bar h1 {
-    font-size: 15pt;
+    font-size: 13pt;
     margin-bottom: 0;
   }
 
@@ -734,9 +734,21 @@ a {
   /* 3枚の潮流図を横一列のまま、紙幅に合わせて縮める */
   .frames {
     grid-template-columns: repeat(var(--columns, 3), 1fr);
-    gap: 3mm;
+    gap: 4mm;
     overflow: visible;
     padding: 0;
+  }
+
+  /* 図は幅を基準に置く。高さで縛ると左右に余白ができて縦向きより小さくなる。
+     上限 79mm は、紙の高さ 192mm に全体が収まる実測値から決めた。 */
+  .panel-body img {
+    width: 100%;
+    max-width: 77mm;
+  }
+
+  /* 横向きは高さが厳しいので説明文は省く */
+  .note {
+    display: none;
   }
 
   .panel {
@@ -751,7 +763,7 @@ a {
   }
 
   .panel-body {
-    padding: 1mm;
+    padding: 0.8mm;
     min-height: 0;
   }
 
@@ -779,17 +791,45 @@ a {
   }
 
   /* 地点の詳細 */
+  /* 横に広い紙面を活かし、矢印の拡大とグラフを左右に並べる */
   .point {
-    margin-top: 3mm;
-    padding: 2mm 0 0;
+    margin-top: 2.5mm;
+    padding: 1.5mm 0 0;
     border: 0;
-    border-top: 1px solid var(--line);
+    border-top: 0.5mm solid #000;
     border-radius: 0;
     break-inside: avoid;
+    display: grid;
+    grid-template-columns: auto 1fr;
+    grid-template-areas:
+      'head head'
+      'stats stats'
+      'arrows chart';
+    gap: 1mm 6mm;
+    align-items: start;
+  }
+
+  .point-head {
+    grid-area: head;
+  }
+
+  .point-stats {
+    grid-area: stats;
+    margin: 0.5mm 0;
+  }
+
+  .arrow-strip {
+    grid-area: arrows;
+    margin: 0;
+  }
+
+  .chart {
+    grid-area: chart;
+    margin: 0;
   }
 
   .point-head h2 {
-    font-size: 12pt;
+    font-size: 11pt;
   }
 
   .point-stats {
@@ -797,18 +837,18 @@ a {
     margin: 1mm 0;
   }
 
-  .arrow-strip {
-    margin: 2mm 0;
+  .arrow-crops {
+    gap: 2.5mm;
   }
 
-  .arrow-crops {
-    gap: 3mm;
+  .arrow-strip-label {
+    margin-bottom: 1mm;
   }
 
   /* 矢印は紙では小さめでも向きが読めるので、場所を節約する */
   .arrow-crop-view {
-    width: 32mm;
-    height: 32mm;
+    width: 23mm;
+    height: 23mm;
     border: 0.3mm solid var(--line);
   }
 
@@ -817,12 +857,29 @@ a {
   }
 
   .chart {
-    margin-top: 1mm;
     opacity: 1 !important;
   }
 
+  /* 紙幅・紙の高さに合わせて描き直しているので、上限で縛らずそのまま置く */
   .chart-svg {
-    max-height: 62mm;
+    width: 100%;
+    height: auto;
+    max-height: none;
+  }
+
+  /* 印刷直前に紙幅で描き直しているので、ここの px はそのまま紙上の大きさになる。
+     画面より大きめにして、縮小された図の中でも読めるようにする。 */
+  .chart-tick {
+    font-size: 15px;
+  }
+
+  .chart-peak-label {
+    font-size: 15px;
+  }
+
+  .chart-grid,
+  .chart-axis {
+    stroke-width: 1;
   }
 
   .chart-caption {
@@ -831,8 +888,8 @@ a {
 
   /* 出典は利用ルール上も必要なので必ず紙に残す */
   .foot {
-    margin-top: 3mm;
-    padding-top: 1.5mm;
+    margin-top: 1mm;
+    padding-top: 1mm;
     border-top: 1px solid var(--line);
     font-size: 9pt;
     break-inside: avoid;
