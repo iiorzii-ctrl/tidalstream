@@ -57,7 +57,6 @@ const STRINGS = {
     'foot.sourcePrefix': '出典:',
     'foot.sourceName': '「潮流推算」（海上保安庁 海洋情報部ホームページ）',
     'foot.processed': '／グラフ・表・CSV は同ページの値をもとに作成',
-    'foot.warnStrong': '推算値です。航海には使用しないでください。',
   },
 
   en: {
@@ -114,7 +113,6 @@ const STRINGS = {
     'foot.sourcePrefix': 'Source:',
     'foot.sourceName': '“Tidal current prediction” (Japan Coast Guard, Hydrographic and Oceanographic Department)',
     'foot.processed': ' / graph, table and CSV built from values on that page',
-    'foot.warnStrong': 'Predictions only. Do not use for navigation.',
   },
 };
 
