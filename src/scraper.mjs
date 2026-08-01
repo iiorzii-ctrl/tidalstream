@@ -1,5 +1,5 @@
 import { FALLBACK_PARAM_NAMES, FORM_ROLE_HINTS, PAGE_URL } from './config.mjs';
-import { findElements, findTags, parseOptions } from './html.mjs';
+import { decodeEntities, findElements, findTags, parseOptions } from './html.mjs';
 
 /**
  * 上流ページのフォームを読み取り、「年」「月」「日」「時」「分」「海域」に
@@ -11,7 +11,10 @@ export function discoverForm(html) {
   const forms = findElements(html, 'form');
   const fields = new Map(); // name -> { name, kind, value, options }
 
-  const scope = forms.length > 0 ? forms.map((f) => f.inner).join('\n') : html;
+  // 実ページのフォームは document.write("<input ... value=\"01\">") のように
+  // JavaScript の文字列として書かれている。エスケープを戻さないと値を誤読するため、
+  // 解析前に \" を " に直しておく。
+  const scope = (forms.length > 0 ? forms.map((f) => f.inner).join('\n') : html).replace(/\\"/g, '"');
 
   for (const select of findElements(scope, 'select')) {
     const name = select.attrs.name;
@@ -91,7 +94,7 @@ export function shapeOfOptions(options) {
  * 指定時刻のページ URL を組み立てる。
  * 判明したフォームの現在値をベースに、時刻まわりだけ差し替える。
  */
-export function buildPageUrl({ form, area, year, month, day, hour, minute = 0, baseUrl = PAGE_URL }) {
+export function buildPageUrl({ form, area, year, month, day, hour, minute, baseUrl = PAGE_URL }) {
   const url = new URL(form?.action ? new URL(form.action, baseUrl) : baseUrl);
   const params = new URLSearchParams();
 
@@ -100,7 +103,10 @@ export function buildPageUrl({ form, area, year, month, day, hour, minute = 0, b
     if (field.value !== undefined && field.value !== null) params.set(field.name, String(field.value));
   }
 
-  const roles = { ...FALLBACK_PARAM_NAMES, ...(form?.roles ?? {}) };
+  // フォームが読めたならその名前だけを使う。読めなかったときだけ推測名に頼る。
+  // （両者を混ぜると、実ページに無い min= のような余計なパラメータが付いてしまう）
+  const discovered = form?.roles ?? {};
+  const roles = Object.keys(discovered).length > 0 ? discovered : FALLBACK_PARAM_NAMES;
   const desired = { area, year, month, day, hour, minute };
 
   for (const [role, value] of Object.entries(desired)) {
@@ -135,6 +141,14 @@ function formatForRole(role, value, form, name) {
   // 選択肢に無い値でも、桁数だけは他の選択肢に合わせておく
   const width = Math.max(...field.options.map((o) => String(o.value).trim().length));
   return Number.isFinite(asNumber) && width > raw.length ? raw.padStart(width, '0') : raw;
+}
+
+/** ページに書かれている海域名（例:「推算海域(area)：東京湾, Tokyowan」）を拾う */
+export function extractAreaLabel(html) {
+  const m = /推算海域\s*\(area\)\s*[：:]\s*([^<\n]+)/.exec(html);
+  if (!m) return null;
+  // 「東京湾, Tokyowan」の和名側だけを使う
+  return decodeEntities(m[1]).split(',')[0].trim() || null;
 }
 
 const NOISE_RE =

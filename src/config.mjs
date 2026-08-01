@@ -50,3 +50,28 @@ export const DEFAULTS = {
   count: 3, // 横に並べる枚数
   stepHours: 1, // 何時間おきか
 };
+
+// 上流ページで有効な海域コード（2026-08 時点で 01〜20。21 以降は図が無い）。
+// 画面の選択肢に使うだけで、これ以外のコードを指定してもリクエスト自体は通る。
+export const AREAS = [
+  { code: '01', name: '東京湾', nameEn: 'Tokyo Bay' },
+  { code: '02', name: '伊勢湾', nameEn: 'Ise Bay' },
+  { code: '03', name: '瀬戸内沿岸', nameEn: 'Seto Inland Sea coast' },
+  { code: '04', name: '九州沿岸', nameEn: 'Kyushu coast' },
+  { code: '05', name: '島原湾北部', nameEn: 'Shimabara Bay (north)' },
+  { code: '06', name: '島原湾南部', nameEn: 'Shimabara Bay (south)' },
+  { code: '07', name: '八代海北部', nameEn: 'Yatsushiro Sea (north)' },
+  { code: '08', name: '八代海南部', nameEn: 'Yatsushiro Sea (south)' },
+  { code: '09', name: '鹿児島湾北部', nameEn: 'Kagoshima Bay (north)' },
+  { code: '10', name: '鹿児島湾南部', nameEn: 'Kagoshima Bay (south)' },
+  { code: '11', name: '奄美大島付近', nameEn: 'Around Amami Oshima' },
+  { code: '12', name: '鹿児島県西方沿岸', nameEn: 'Western coast of Kagoshima' },
+  { code: '13', name: '種子島・屋久島付近', nameEn: 'Around Tanegashima and Yakushima' },
+  { code: '14', name: '沖縄島群島', nameEn: 'Okinawa island group' },
+  { code: '15', name: '沖縄島北部', nameEn: 'Okinawa Island (north)' },
+  { code: '16', name: '沖縄島南部', nameEn: 'Okinawa Island (south)' },
+  { code: '17', name: '与那国島', nameEn: 'Yonaguni Island' },
+  { code: '18', name: '慶良間列島・粟国島・久米島', nameEn: 'Kerama, Aguni and Kume Islands' },
+  { code: '19', name: '大東諸島', nameEn: 'Daito Islands' },
+  { code: '20', name: '宮古島・石垣島・西表島', nameEn: 'Miyako, Ishigaki and Iriomote Islands' },
+];

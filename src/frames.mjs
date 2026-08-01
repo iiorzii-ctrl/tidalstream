@@ -1,6 +1,7 @@
 import { DEFAULTS, PAGE_URL } from './config.mjs';
 import { fetchPage } from './fetcher.mjs';
-import { buildPageUrl, discoverForm, extractImageCandidates } from './scraper.mjs';
+import { buildPageUrl, discoverForm, extractAreaLabel, extractImageCandidates } from './scraper.mjs';
+import { extractStations, nearestStation, stationId, summarize } from './stations.mjs';
 
 const TOKYO_TZ = 'Asia/Tokyo';
 
@@ -66,14 +67,18 @@ export async function collectFrames({
     times.map(async (time) => {
       const pageUrl = buildPageUrl({ form, area, ...time, baseUrl: PAGE_URL });
       try {
-        const page = await fetchPage(pageUrl, { referer: basePageUrl });
+        // 日時を指定したページは結果が変わらないので、ディスクにも残す
+        const page = await fetchPage(pageUrl, { referer: basePageUrl, persist: true });
         const candidates = extractImageCandidates(page.html, page.url);
+        const stations = extractStations(page.html);
         return {
           time,
           label: formatTime(time),
           pageUrl,
           candidates,
           imageUrl: candidates[0]?.url ?? null,
+          stations,
+          summary: summarize(stations),
           error: candidates.length === 0 ? 'ページ内に画像が見つかりませんでした' : null,
         };
       } catch (error) {
@@ -83,6 +88,8 @@ export async function collectFrames({
           pageUrl,
           candidates: [],
           imageUrl: null,
+          stations: [],
+          summary: null,
           error: error?.message ?? String(error),
         };
       }
@@ -91,11 +98,76 @@ export async function collectFrames({
 
   return {
     area,
+    areaLabel: extractAreaLabel(basePage.html),
     stepHours,
     count,
     start: origin,
     basePageUrl,
     form: { roles: form.roles, formCount: form.formCount, fields: form.fields.map((f) => f.name) },
     frames,
+  };
+}
+
+/**
+ * 特定地点の流速の推移を集める。
+ * 地点は画像上の座標で指定する（座標は時刻が変わっても一定なので識別子になる）。
+ */
+export async function collectSeries({
+  area = DEFAULTS.area,
+  start,
+  hours = 12,
+  stepHours = DEFAULTS.stepHours,
+  x,
+  y,
+} = {}) {
+  const origin = start ?? nowInTokyo();
+  const basePageUrl = buildPageUrl({ form: null, area, baseUrl: PAGE_URL });
+  const basePage = await fetchPage(basePageUrl);
+  const form = discoverForm(basePage.html);
+
+  const times = Array.from({ length: hours }, (_, i) => addHours(origin, i * stepHours));
+  const points = await Promise.all(
+    times.map(async (time) => {
+      const pageUrl = buildPageUrl({ form, area, ...time, baseUrl: PAGE_URL });
+      try {
+        // 日時を指定したページは結果が変わらないので、ディスクにも残す
+        const page = await fetchPage(pageUrl, { referer: basePageUrl, persist: true });
+        const stations = extractStations(page.html);
+        const hit = nearestStation(stations, x, y);
+        return {
+          time,
+          label: formatTime(time),
+          hour: time.hour,
+          knots: hit?.station.knots ?? null,
+          error: hit ? null : '地点が見つかりませんでした',
+        };
+      } catch (error) {
+        return { time, label: formatTime(time), hour: time.hour, knots: null, error: error?.message ?? String(error) };
+      }
+    }),
+  );
+
+  // 選ばれた地点そのもの（基準時刻のページから確定させる）
+  const baseStations = extractStations(basePage.html);
+  const picked = nearestStation(baseStations, x, y)?.station ?? null;
+
+  const values = points.map((p) => p.knots).filter((v) => v !== null);
+  return {
+    area,
+    areaLabel: extractAreaLabel(basePage.html),
+    station: picked ? { ...picked, id: stationId(picked) } : { x, y, id: `${x},${y}` },
+    requested: { x, y },
+    stepHours,
+    hours,
+    start: origin,
+    points,
+    stats: values.length
+      ? {
+          max: Math.max(...values),
+          min: Math.min(...values),
+          mean: Number((values.reduce((a, b) => a + b, 0) / values.length).toFixed(3)),
+          peakAt: points.find((p) => p.knots === Math.max(...values))?.label ?? null,
+        }
+      : null,
   };
 }

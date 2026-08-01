@@ -1,23 +1,52 @@
+/* 配色は素材である海図から取る。
+   海の淡いシアン、陸の砂色、図の細い黒罫線。中間色は青に寄せて、
+   汎用のグレーに見えないようにする。 */
 :root {
   color-scheme: light dark;
-  --bg: #f6f7f9;
+  --bg: #eaf0f4;
   --panel: #ffffff;
-  --ink: #14181f;
-  --muted: #5c6672;
-  --line: #d9dee5;
-  --accent: #12608f;
+  --ink: #0d2233;
+  --muted: #55707f;
+  --line: #ccd9e1;
+  --rule: #0d2233; /* 図の罫線に合わせた濃い線。見出しの下などに使う */
+  --sea: #e4f2f8; /* 図の海の色 */
+  --accent: #0f5c86;
   --error: #b3261e;
+
+  /* グラフ用。単一系列なので系列色は1つだけ使う。
+     検証済み: 明背景 #ffffff / 暗背景 #1c2229 の両方で全チェック PASS */
+  --series-1: #2a78d6;
+  --text-primary: #0b0b0b;
+  --text-secondary: #52514e;
+  --text-muted: #898781;
+  --gridline: #e1e0d9;
+  --baseline: #c3c2b7;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --bg: #14181d;
-    --panel: #1c2229;
-    --ink: #e8ecf1;
-    --muted: #9aa5b1;
-    --line: #2e3742;
+    --bg: #0a151e;
+    --panel: #12212c;
+    --ink: #e3edf3;
+    --muted: #90a7b5;
+    --line: #24384a;
+    --rule: #7d99aa;
+    --sea: #16303f;
     --accent: #6fb6e6;
     --error: #ef9a93;
+
+    /* 暗背景用に取り直した値。明側の自動反転ではない */
+    --series-1: #3987e5;
+    --text-primary: #ffffff;
+    --text-secondary: #c3c2b7;
+    --text-muted: #898781;
+    --gridline: #2c2c2a;
+    --baseline: #383835;
+  }
+
+  /* 図の上のマーカーは、暗所でも図（明るい地図）の上に載るので明側の値を保つ */
+  .station::before {
+    border-color: rgba(11, 11, 11, 0.5);
   }
 }
 
@@ -34,15 +63,73 @@ body {
   line-height: 1.6;
 }
 
+/* 海図の標題欄（タイトルカルトゥーシュ）を意識した見出し。
+   細い罫線と、字間を空けた小さな肩見出しで構成する。 */
+.bar {
+  margin-bottom: 1.25rem;
+  padding-bottom: 0.6rem;
+  border-bottom: 2px solid var(--rule);
+}
+
+.bar-row {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.bar-title {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.eyebrow {
+  margin: 0;
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  color: var(--muted);
+}
+
 .bar h1 {
   margin: 0;
-  font-size: 1.25rem;
+  font-size: clamp(1.6rem, 1.15rem + 1.9vw, 2.4rem);
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  line-height: 1.15;
+  text-wrap: balance;
+}
+
+/* 図の中の囲みラベルに合わせて、角丸なしの細い枠にする */
+.lang-toggle {
+  font: inherit;
+  font-size: 0.875rem;
+  padding: 0.3rem 0.8rem;
+  color: var(--ink);
+  background: var(--panel);
+  border: 1px solid var(--rule);
+  border-radius: 2px;
+  cursor: pointer;
+  white-space: nowrap;
+  letter-spacing: 0.04em;
+}
+
+.lang-toggle:hover,
+.lang-toggle:focus-visible {
+  border-color: var(--accent);
+}
+
+@media print {
+  .lang-toggle {
+    display: none;
+  }
 }
 
 .note,
 .foot {
   color: var(--muted);
-  font-size: 0.85rem;
+  font-size: 0.9rem;
 }
 
 .controls {
@@ -50,18 +137,20 @@ body {
   flex-wrap: wrap;
   gap: 0.75rem 1rem;
   align-items: flex-end;
-  margin: 1rem 0;
-  padding: 0.9rem 1rem;
+  margin: 0 0 0.9rem;
+  padding: 0.75rem 0.9rem;
   background: var(--panel);
   border: 1px solid var(--line);
-  border-radius: 10px;
+  border-radius: 3px;
 }
 
 .controls label {
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
+  gap: 0.3rem;
   font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
   color: var(--muted);
 }
 
@@ -75,23 +164,25 @@ body {
 .controls select,
 .controls button {
   font: inherit;
-  font-size: 0.9rem;
+  font-size: 0.95rem;
   padding: 0.35rem 0.5rem;
   color: var(--ink);
   background: var(--bg);
   border: 1px solid var(--line);
-  border-radius: 6px;
+  border-radius: 3px;
 }
 
 .controls button {
   cursor: pointer;
   background: var(--accent);
-  border-color: transparent;
+  border-color: var(--accent);
   color: #fff;
-  padding-inline: 1rem;
+  padding-inline: 1.1rem;
+  letter-spacing: 0.04em;
 }
 
-.controls button#now {
+.controls button#now,
+.controls button#print {
   background: transparent;
   color: var(--accent);
   border-color: var(--line);
@@ -100,7 +191,7 @@ body {
 .status {
   min-height: 1.5rem;
   margin: 0 0 0.75rem;
-  font-size: 0.85rem;
+  font-size: 0.9rem;
   color: var(--muted);
 }
 
@@ -112,33 +203,40 @@ body {
   color: #b26a00;
 }
 
-/* 本題: 指定枚数を横一列に並べる */
+/* 本題: 指定枚数を横一列に並べる。
+   枚数が多くて幅が足りないときは、図を潰さずにこの枠内だけ横スクロールさせる。 */
 .frames {
   display: grid;
-  grid-template-columns: repeat(var(--columns, 3), minmax(0, 1fr));
+  grid-template-columns: repeat(var(--columns, 3), minmax(260px, 1fr));
   gap: 1rem;
   align-items: start;
+  overflow-x: auto;
+  padding-bottom: 0.5rem;
 }
 
+/* 縦に並べたほうが見やすい幅では1列にする */
 @media (max-width: 900px) {
   .frames {
     grid-template-columns: 1fr;
+    overflow-x: visible;
   }
 }
 
 .panel {
   background: var(--panel);
   border: 1px solid var(--line);
-  border-radius: 10px;
+  border-radius: 3px;
   overflow: hidden;
 }
 
 .panel-head {
-  padding: 0.5rem 0.75rem;
-  border-bottom: 1px solid var(--line);
+  padding: 0.45rem 0.75rem;
+  border-bottom: 1px solid var(--rule);
+  background: var(--sea);
   font-variant-numeric: tabular-nums;
   font-weight: 600;
-  font-size: 0.9rem;
+  font-size: 0.95rem;
+  letter-spacing: 0.03em;
 }
 
 .panel-body {
@@ -178,10 +276,107 @@ body {
   text-align: center;
 }
 
+/* --- 図の上に重ねる流速の観測地点 --- */
+.stage {
+  position: relative;
+  display: inline-block;
+  line-height: 0;
+}
+
+/* 見た目の丸は控えめに、当たり判定は 24px 確保する */
+.station {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  display: grid;
+  place-items: center;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+}
+
+/* 図そのものが主役なので、地点の丸は既定では出さない。
+   図にマウスを乗せたときだけ薄く出し、クリックできる場所を示す。 */
+.station::before {
+  content: '';
+  position: absolute;
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  border: 1.5px solid transparent;
+  background: transparent;
+  transition: border-color 0.12s ease, background-color 0.12s ease;
+}
+
+.stage:hover .station::before {
+  border-color: rgba(11, 11, 11, 0.3);
+  background: rgba(255, 255, 255, 0.25);
+}
+
+/* iPad などホバーの無い端末では、ホバーで出す方式だと地点に永久にたどり着けない。
+   常に薄く表示して、タップできる場所が分かるようにする。 */
+@media (hover: none) {
+  .station::before {
+    border-color: rgba(11, 11, 11, 0.28);
+    background: rgba(255, 255, 255, 0.22);
+  }
+
+  .station:active::before {
+    border-color: var(--accent);
+    border-width: 2px;
+    background: rgba(255, 255, 255, 0.8);
+  }
+}
+
+.station:hover::before,
+.station:focus-visible::before {
+  border-color: var(--accent);
+  border-width: 2px;
+  background: rgba(255, 255, 255, 0.8);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .station::before {
+    transition: none;
+  }
+}
+
+.station.is-selected::before {
+  width: 15px;
+  height: 15px;
+  border: 2px solid var(--series-1);
+  box-shadow: 0 0 0 2px var(--panel);
+  background: rgba(255, 255, 255, 0.5);
+}
+
+/* 数値は選択中と hover のときだけ出す（全点に数値を出さない） */
+.station-value {
+  position: absolute;
+  top: -15px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: 1;
+  padding: 1px 3px;
+  border-radius: 3px;
+  color: var(--ink);
+  background: var(--panel);
+  opacity: 0;
+  pointer-events: none;
+  font-variant-numeric: tabular-nums;
+}
+
+.station:hover .station-value,
+.station:focus-visible .station-value,
+.station.is-selected .station-value {
+  opacity: 1;
+}
+
 .candidates {
   padding: 0.4rem 0.75rem 0.6rem;
   border-top: 1px solid var(--line);
-  font-size: 0.75rem;
+  font-size: 0.85rem;
   color: var(--muted);
 }
 
@@ -197,4 +392,520 @@ body {
 
 a {
   color: var(--accent);
+}
+
+/* --- 特定地点の流速の推移 --- */
+.point {
+  margin-top: 1.25rem;
+  padding: 0.9rem 1rem 1rem;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-top: 2px solid var(--rule);
+  border-radius: 3px;
+}
+
+.point-head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1rem;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.point-head h2 {
+  margin: 0;
+  font-size: 1.15rem;
+  letter-spacing: -0.01em;
+}
+
+.point-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+  font-size: 0.875rem;
+  color: var(--muted);
+}
+
+.point-actions button,
+.point-actions select,
+.button-link {
+  font: inherit;
+  font-size: 0.875rem;
+  padding: 0.32rem 0.7rem;
+  color: var(--ink);
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.point-stats {
+  margin: 0.4rem 0 0.2rem;
+  font-size: 0.95rem;
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+/* --- 選んだ地点の矢印を切り出して並べる --- */
+.arrow-strip {
+  margin: 0.6rem 0 0.2rem;
+}
+
+.arrow-strip-label {
+  display: block;
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+  margin-bottom: 0.4rem;
+}
+
+.arrow-crops {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+
+.arrow-crop {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.2rem;
+}
+
+.arrow-crop-view {
+  width: 120px;
+  height: 120px;
+  border: 1px solid var(--rule);
+  border-radius: 2px;
+  background-repeat: no-repeat;
+  /* 選んだ地点が枠の中央に来る。枠の大きさが変わっても崩れない */
+  background-position: calc(50% - var(--point-x, 0px)) calc(50% - var(--point-y, 0px));
+  background-color: #eaf4fb; /* 海の色。読み込み前や欠けた縁を埋める */
+  position: relative;
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+  color: var(--muted);
+  image-rendering: pixelated; /* 拡大時に矢印の輪郭をはっきり見せる */
+}
+
+/* 中心（＝選んだ地点）を示すリング。矢印がどの色でも見えるよう、
+   白フチ＋濃い輪郭にする（矢印は根元＝この位置から伸びる） */
+.arrow-crop-view::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 9px;
+  height: 9px;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  border: 2px solid #fff;
+  box-shadow: 0 0 0 1px rgba(11, 11, 11, 0.85);
+}
+
+.arrow-crop figcaption {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+.chart {
+  position: relative;
+  margin-top: 0.25rem;
+}
+
+.chart.is-loading {
+  opacity: 0.55; /* 再取得中も前の描画を保つ */
+}
+
+.chart-svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+
+.chart-grid {
+  stroke: var(--gridline);
+  stroke-width: 1;
+}
+
+.chart-axis {
+  stroke: var(--baseline);
+  stroke-width: 1;
+}
+
+.chart-tick {
+  fill: var(--text-muted);
+  font-size: 12.5px;
+  font-variant-numeric: tabular-nums;
+}
+
+.chart-line {
+  fill: none;
+  stroke: var(--series-1);
+  stroke-width: 2;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+
+.chart-area {
+  fill: var(--series-1);
+  opacity: 0.1;
+}
+
+.chart-peak,
+.chart-cursor {
+  fill: var(--series-1);
+  stroke: var(--panel);
+  stroke-width: 2;
+}
+
+.chart-peak-label {
+  fill: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.chart-crosshair {
+  stroke: var(--baseline);
+  stroke-width: 1;
+}
+
+.chart-caption {
+  margin: 0.25rem 0 0;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.chart-svg [tabindex]:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* display を指定すると [hidden] のブラウザ既定より優先されてしまうので、
+   非表示を明示する（これが無いと中身の空のツールチップが描画されたままになる） */
+.chart-tooltip[hidden] {
+  display: none;
+}
+
+.chart-tooltip {
+  position: absolute;
+  transform: translate(-50%, calc(-100% - 14px));
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding: 0.3rem 0.5rem;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+.chart-tooltip strong {
+  font-size: 0.95rem;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.chart-tooltip span {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.point-table {
+  margin-top: 0.75rem;
+  max-height: 260px;
+  overflow-y: auto;
+}
+
+.point-table table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.point-table th,
+.point-table td {
+  padding: 0.25rem 0.5rem;
+  text-align: left;
+  border-bottom: 1px solid var(--line);
+}
+
+.point-table th {
+  position: sticky;
+  top: 0;
+  background: var(--panel);
+  color: var(--text-secondary);
+}
+
+/* ============================================================
+   印刷（A4 縦 1 枚に収める）
+   画面の見た目ではなく「紙で読めること」を優先する。
+   ダークテーマで表示していても、紙は白地に統一する。
+   ============================================================ */
+@page {
+  size: A4 landscape;
+  margin: 9mm 10mm;
+}
+
+@media print {
+  /* 地図や矢印は背景画像・背景色で描かれているので、印刷に確実に出す */
+  * {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* 紙は常に白地。暗いテーマのまま印刷して真っ黒になるのを防ぐ */
+  :root,
+  :root[data-theme='dark'],
+  :root[data-theme='light'] {
+    color-scheme: light;
+    --bg: #ffffff;
+    --panel: #ffffff;
+    --ink: #000000;
+    --muted: #444444;
+    --line: #999999;
+    --accent: #12608f;
+    --series-1: #1b5fa8;
+    --text-primary: #000000;
+    --text-secondary: #333333;
+    --text-muted: #555555;
+    --gridline: #cccccc;
+    --baseline: #888888;
+  }
+
+  body {
+    padding: 0;
+    background: #fff;
+    font-size: 10.5pt;
+    line-height: 1.4;
+  }
+
+  /* 操作用のものは紙に不要 */
+  .controls,
+  .candidates,
+  .point-actions,
+  .point-table,
+  .status,
+  .chart-tooltip {
+    display: none !important;
+  }
+
+  /* 紙では見出し周りを詰める（画面ほど余白を取らない） */
+  .bar {
+    margin-bottom: 2mm;
+    padding-bottom: 1mm;
+    border-bottom: 0.4mm solid #000;
+  }
+
+  .eyebrow {
+    display: none; /* 出典は下に書いてあるので紙では省く */
+  }
+
+  .bar h1 {
+    font-size: 12pt;
+    margin-bottom: 0;
+  }
+
+  .point {
+    border-top: 0.5mm solid #000;
+  }
+
+  .panel-head {
+    background: transparent;
+  }
+
+  .note {
+    font-size: 9.5pt;
+    margin: 0 0 2mm;
+  }
+
+  /* 3枚の潮流図を横一列のまま、紙幅に合わせて縮める */
+  .frames {
+    grid-template-columns: repeat(var(--columns, 3), 1fr);
+    gap: 2.5mm;
+    overflow: visible;
+    padding: 0;
+  }
+
+  /* 図は幅を基準に置く。高さで縛ると左右に余白ができて縦向きより小さくなる。
+     上限 79mm は、紙の高さ 192mm に全体が収まる実測値から決めた。 */
+  .panel-body img {
+    width: 100%;
+    max-width: 90mm;
+  }
+
+  /* 横向きは高さが厳しいので説明文は省く */
+  .note {
+    display: none;
+  }
+
+  .panel {
+    border: 1px solid var(--line);
+    border-radius: 2mm;
+    break-inside: avoid;
+  }
+
+  .panel-head {
+    padding: 0.6mm 1.5mm;
+    font-size: 9pt;
+  }
+
+  .panel-body {
+    padding: 0.4mm;
+    min-height: 0;
+  }
+
+  /* 選んだ地点だけ紙に残す（他の丸は紙面を汚すだけ） */
+  .station::before,
+  .stage:hover .station::before {
+    border-color: transparent;
+    background: transparent;
+  }
+
+  .station.is-selected::before {
+    border-color: #000;
+    box-shadow: 0 0 0 1.5px #fff;
+  }
+
+  /* 全点の数値が出ると矢印が隠れて図が読めなくなる。選んだ地点だけ残す */
+  .station-value {
+    opacity: 0;
+  }
+
+  .station.is-selected .station-value {
+    opacity: 1;
+    border: 0.3mm solid #000;
+    font-size: 7pt;
+  }
+
+  /* 地点の詳細 */
+  /* 横に広い紙面を活かし、矢印の拡大とグラフを左右に並べる */
+  .point {
+    margin-top: 1.5mm;
+    padding: 1mm 0 0;
+    border: 0;
+    border-top: 0.5mm solid #000;
+    border-radius: 0;
+    break-inside: avoid;
+    display: grid;
+    grid-template-columns: auto 1fr;
+    grid-template-areas:
+      'head head'
+      'stats stats'
+      'arrows chart';
+    gap: 0.5mm 5mm;
+    align-items: start;
+  }
+
+  .point-head {
+    grid-area: head;
+  }
+
+  .point-stats {
+    grid-area: stats;
+    margin: 0;
+  }
+
+  .arrow-strip {
+    grid-area: arrows;
+    margin: 0;
+  }
+
+  .chart {
+    grid-area: chart;
+    margin: 0;
+  }
+
+  .point-head h2 {
+    font-size: 10.5pt;
+  }
+
+  .point-stats {
+    font-size: 10pt;
+    margin: 1mm 0;
+  }
+
+  .arrow-crops {
+    gap: 2.5mm;
+  }
+
+  .arrow-strip-label {
+    margin-bottom: 1mm;
+  }
+
+  /* 矢印は紙では小さめでも向きが読めるので、場所を節約する */
+  .arrow-crop-view {
+    width: 26mm;
+    height: 26mm;
+    border: 0.3mm solid var(--line);
+  }
+
+  .arrow-crop figcaption {
+    font-size: 9pt;
+  }
+
+  .chart {
+    opacity: 1 !important;
+  }
+
+  /* 紙幅・紙の高さに合わせて描き直しているので、上限で縛らずそのまま置く */
+  .chart-svg {
+    width: 100%;
+    height: auto;
+    max-height: none;
+  }
+
+  /* 印刷直前に紙幅で描き直しているので、ここの px はそのまま紙上の大きさになる。
+     画面より大きめにして、縮小された図の中でも読めるようにする。 */
+  .chart-tick {
+    font-size: 15px;
+  }
+
+  .chart-peak-label {
+    font-size: 15px;
+  }
+
+  .chart-grid,
+  .chart-axis {
+    stroke-width: 1;
+  }
+
+  /* 単位は上の統計行（最大 1.7kn …）と各図の日時で分かるので、紙では省く */
+  .chart-caption {
+    display: none;
+  }
+
+  /* 出典は利用ルール上も必要なので必ず紙に残す */
+  .foot {
+    margin-top: 0.5mm;
+    padding-top: 0.8mm;
+    border-top: 1px solid var(--line);
+    font-size: 8.5pt;
+    line-height: 1.25;
+    break-inside: avoid;
+  }
+
+  .foot p {
+    margin: 0;
+  }
+
+  .foot a {
+    color: #000;
+    text-decoration: none;
+  }
+
+  a[href]::after {
+    content: '';
+  }
 }

@@ -6,6 +6,7 @@ import {
   UPSTREAM_TIMEOUT_MS,
   USER_AGENT,
 } from './config.mjs';
+import { looksDeterministic, readCache, writeCache } from './diskcache.mjs';
 import { decodeBody } from './html.mjs';
 
 /** 同時接続数を絞って、上流サーバに負荷をかけないようにする */
@@ -122,29 +123,63 @@ async function request(url, { referer, accept } = {}) {
   }
 }
 
-/** HTML ページを取得してデコードする（キャッシュあり） */
-export async function fetchPage(rawUrl, { referer } = {}) {
+/**
+ * HTML ページを取得してデコードする。
+ * 日時を明示した URL は結果が変わらないのでディスクにも残す（persist）。
+ */
+export async function fetchPage(rawUrl, { referer, persist = false } = {}) {
   const url = assertAllowedUrl(rawUrl).toString();
   const cached = pageCache.get(url);
-  if (cached) return { ...cached, cached: true };
+  if (cached) return { ...cached, cached: 'memory' };
+
+  const persistable = persist && looksDeterministic(url);
+  if (persistable) {
+    const stored = await readCache('pages', url);
+    if (stored) {
+      const value = {
+        html: stored.body.toString('utf8'),
+        charset: stored.charset,
+        url,
+        contentType: stored.contentType,
+      };
+      pageCache.set(url, value, PAGE_CACHE_TTL_MS);
+      return { ...value, cached: 'disk' };
+    }
+  }
 
   const { buffer, contentType, finalUrl } = await gate.run(() => request(url, { referer }));
   const { text, charset } = decodeBody(buffer, contentType);
   const value = { html: text, charset, url: finalUrl, contentType };
   pageCache.set(url, value, PAGE_CACHE_TTL_MS);
+  // デコード済みの本文を保存する（元の文字コードに戻す必要をなくすため）
+  if (persistable) await writeCache('pages', url, { body: Buffer.from(text, 'utf8'), contentType, charset: 'utf-8' });
   return { ...value, cached: false };
 }
 
-/** 画像を取得する（キャッシュあり）。Referer を付けないと弾く CGI があるため付与する */
+/**
+ * 画像を取得する。Referer を付けないと弾く CGI があるため付与する。
+ * ファイル名に日時が入っている画像は内容が変わらないのでディスクにも残す。
+ */
 export async function fetchImage(rawUrl, { referer } = {}) {
   const url = assertAllowedUrl(rawUrl).toString();
   const cached = imageCache.get(url);
-  if (cached) return { ...cached, cached: true };
+  if (cached) return { ...cached, cached: 'memory' };
+
+  const persistable = looksDeterministic(url);
+  if (persistable) {
+    const stored = await readCache('images', url);
+    if (stored) {
+      const value = { buffer: stored.body, contentType: stored.contentType };
+      imageCache.set(url, value, IMAGE_CACHE_TTL_MS);
+      return { ...value, cached: 'disk' };
+    }
+  }
 
   const { buffer, contentType } = await gate.run(() =>
     request(url, { referer, accept: 'image/avif,image/webp,image/*,*/*;q=0.8' }),
   );
   const value = { buffer, contentType: contentType || 'application/octet-stream' };
   imageCache.set(url, value, IMAGE_CACHE_TTL_MS);
+  if (persistable) await writeCache('images', url, { body: buffer, contentType: value.contentType });
   return { ...value, cached: false };
 }
