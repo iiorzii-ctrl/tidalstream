@@ -60,17 +60,46 @@ AUTH_USER=好きな名前 AUTH_PASS=十分に長いパスワード HOST=0.0.0.0 
 `AUTH_USER` と `AUTH_PASS` の両方を設定したときだけ認証が有効になります。手元で
 動かすぶんには設定不要です。認証なしで `0.0.0.0` を待ち受けると起動時に警告が出ます。
 
-**Render に置く場合**（`render.yaml` を同梱しています）
+#### Render の無料枠に置く手順
 
-1. このリポジトリを GitHub に置く
-2. Render で New → Blueprint を選び、リポジトリを指定する
-3. `AUTH_USER` と `AUTH_PASS` に値を入れる（画面から入力する項目になっています）
-4. 発行された URL を iPad や職場の PC のブラウザで開き、手順3の値でログインする
+`render.yaml` を同梱しているので、設定を書かずに置けます。
+
+1. このリポジトリを GitHub に push する
+2. [dashboard.render.com](https://dashboard.render.com) で **New → Blueprint**
+3. このリポジトリを選ぶ。`render.yaml` が読まれ、内容が表示される
+4. `AUTH_USER` と `AUTH_PASS` の入力欄が出るので値を入れる
+   （パスワードは推測されにくい長いものにしてください）
+5. Apply を押す。数分で `https://tidalstream-xxxx.onrender.com` のような URL が出る
+6. iPad や職場の PC でその URL を開き、手順4の値でログインする
+
+`render.yaml` の中身:
+
+| 設定 | 値 | 理由 |
+| --- | --- | --- |
+| `plan` | `free` | 無料枠 |
+| `region` | `singapore` | 上流が日本にあるため近いところを選ぶ |
+| `buildCommand` | 何もしない | 依存パッケージが無いのでビルド不要 |
+| `healthCheckPath` | `/healthz` | 認証の対象外なので死活監視が通る |
+
+**無料枠は一定時間アクセスが無いと停止します。** 次にアクセスしたときに起動し直すため、
+その1回だけ 30〜60 秒ほど待たされます。2回目以降は普通に動きます。待ち時間を無くしたい
+場合は有料プランにするか、下の Cloudflare Tunnel を使ってください。
+
+実測のメモリ使用量は最大 90MB 程度（起動直後 60MB）なので、無料枠の制限には余裕があります。
+
+#### 手元の PC を外から見る（デプロイしない方法）
+
+PC を起動しておく必要がありますが、待ち時間ゼロで無料です。
+
+```bash
+node server.mjs
+cloudflared tunnel --url http://localhost:3000
+```
+
+#### その他のホスティング
 
 `Dockerfile` も同梱しているので、Fly.io・Railway・Cloud Run など Docker が使える
-ところにもそのまま載ります。依存パッケージが無いのでビルドは実質不要です。
-
-死活監視用に `/healthz` だけ認証なしで応答します（内部の情報は返しません）。
+ところにもそのまま載ります。
 
 iPad では Safari の共有メニューから「ホーム画面に追加」すると、アプリのように開けます。
 

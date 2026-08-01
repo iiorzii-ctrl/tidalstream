@@ -6,7 +6,7 @@ services:
     runtime: node
     plan: free
     region: singapore # 上流が日本にあるので近いリージョンを選ぶ
-    buildCommand: 'echo "依存パッケージなし"'
+    buildCommand: 'echo "no dependencies to install"'
     startCommand: node server.mjs
     healthCheckPath: /healthz
     envVars:
