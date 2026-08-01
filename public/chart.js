@@ -27,7 +27,39 @@ function niceTicks(max) {
   return { ticks, top: top || step };
 }
 
+// 直近の描画対象。幅が変わったときに描き直すために覚えておく。
+let current = null;
+let lastWidth = 0;
+let observer = null;
+
+/**
+ * 幅が変わったら描き直す。
+ * SVG を固定の viewBox で拡大縮小させると、画面幅に応じて文字の実サイズが
+ * 変わってしまう（実測で PC 19px / iPhone 5px）。そこで viewBox を実際の
+ * ピクセル幅に合わせ、常に等倍で描くことで文字サイズを一定に保つ。
+ */
+function watchResize(container) {
+  if (observer || typeof ResizeObserver === 'undefined') return;
+  observer = new ResizeObserver(() => {
+    if (!current) return;
+    const width = Math.round(current.container.clientWidth);
+    if (Math.abs(width - lastWidth) < 4) return; // 自分の描画で揺れるのを防ぐ
+    draw(current.container, current.series);
+  });
+  observer.observe(container);
+  // 印刷時は紙幅に合わせて描き直す
+  window.matchMedia?.('print').addEventListener?.('change', () => {
+    if (current) draw(current.container, current.series);
+  });
+}
+
 export function renderSeriesChart(container, series) {
+  draw(container, series);
+  watchResize(container);
+}
+
+function draw(container, series) {
+  current = { container, series };
   container.innerHTML = '';
 
   const points = series.points.filter((p) => p.knots !== null);
@@ -39,8 +71,10 @@ export function renderSeriesChart(container, series) {
     return;
   }
 
-  const width = 900;
-  const height = 260;
+  // viewBox を実寸に合わせるので、SVG 内の文字はそのままの px で表示される
+  const width = Math.round(Math.min(1600, Math.max(320, container.clientWidth || 900)));
+  const height = Math.round(Math.min(300, Math.max(190, width * 0.3)));
+  lastWidth = width;
   const plotW = width - PAD.left - PAD.right;
   const plotH = height - PAD.top - PAD.bottom;
 
@@ -52,6 +86,8 @@ export function renderSeriesChart(container, series) {
 
   const svg = el('svg', {
     viewBox: `0 0 ${width} ${height}`,
+    width,
+    height,
     class: 'chart-svg',
     role: 'img',
     'aria-label': t('chart.aria', { x: series.station.x, y: series.station.y }),

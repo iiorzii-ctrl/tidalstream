@@ -55,14 +55,8 @@ const STRINGS = {
 
     'foot.sourcePrefix': '出典:',
     'foot.sourceName': '「潮流推算」（海上保安庁 海洋情報部ホームページ）',
-    'foot.processed':
-      '潮流図はそのまま表示しています。流速の推移のグラフと表・CSV は、同ページの値をもとに当ツールが作成したものです。',
-    'foot.warnStrong': '航海には使用しないでください。',
-    'foot.warnRest': '推算値であり、実際の航行にあたっては海図など正規の資料を参照してください。',
-    'foot.stations':
-      '図の上の丸印は流速の観測地点です。クリックすると、その地点の流速の推移を下に表示します。取得できるのは流速（ノット）のみで、流向は含まれません。',
-    'foot.candidates':
-      '図が想定と違うときは各パネルの「候補」から選び直してください。選択は次回以降も同じ順位の候補が使われます。',
+    'foot.processed': '／グラフ・表・CSV は同ページの値をもとに作成',
+    'foot.warnStrong': '推算値です。航海には使用しないでください。',
   },
 
   en: {
@@ -117,14 +111,8 @@ const STRINGS = {
 
     'foot.sourcePrefix': 'Source:',
     'foot.sourceName': '“Tidal current prediction” (Japan Coast Guard, Hydrographic and Oceanographic Department)',
-    'foot.processed':
-      'The charts are shown unmodified. The speed graph, table and CSV were produced by this tool from values on the same page.',
-    'foot.warnStrong': 'Do not use for navigation.',
-    'foot.warnRest': 'These are predictions. Use nautical charts and other official sources for actual navigation.',
-    'foot.stations':
-      'The circles on the chart are observation stations. Select one to see how its speed changes over time below. Only speed (knots) is available; direction is not included.',
-    'foot.candidates':
-      'If a chart looks wrong, pick a different image from the panel. Your choice is reused next time.',
+    'foot.processed': ' / graph, table and CSV built from values on that page',
+    'foot.warnStrong': 'Predictions only. Do not use for navigation.',
   },
 };
 

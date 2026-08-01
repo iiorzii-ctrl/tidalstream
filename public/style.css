@@ -71,7 +71,7 @@ body {
 
 .lang-toggle {
   font: inherit;
-  font-size: 0.8rem;
+  font-size: 0.875rem;
   padding: 0.3rem 0.75rem;
   color: var(--accent);
   background: var(--panel);
@@ -95,7 +95,7 @@ body {
 .note,
 .foot {
   color: var(--muted);
-  font-size: 0.85rem;
+  font-size: 0.9rem;
 }
 
 .controls {
@@ -114,7 +114,7 @@ body {
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
-  font-size: 0.8rem;
+  font-size: 0.875rem;
   color: var(--muted);
 }
 
@@ -154,7 +154,7 @@ body {
 .status {
   min-height: 1.5rem;
   margin: 0 0 0.75rem;
-  font-size: 0.85rem;
+  font-size: 0.9rem;
   color: var(--muted);
 }
 
@@ -197,7 +197,7 @@ body {
   border-bottom: 1px solid var(--line);
   font-variant-numeric: tabular-nums;
   font-weight: 600;
-  font-size: 0.9rem;
+  font-size: 0.95rem;
 }
 
 .panel-body {
@@ -315,8 +315,8 @@ body {
 /* 数値は選択中と hover のときだけ出す（全点に数値を出さない） */
 .station-value {
   position: absolute;
-  top: -14px;
-  font-size: 0.65rem;
+  top: -15px;
+  font-size: 0.75rem;
   font-weight: 600;
   line-height: 1;
   padding: 1px 3px;
@@ -337,7 +337,7 @@ body {
 .candidates {
   padding: 0.4rem 0.75rem 0.6rem;
   border-top: 1px solid var(--line);
-  font-size: 0.75rem;
+  font-size: 0.85rem;
   color: var(--muted);
 }
 
@@ -382,7 +382,7 @@ a {
   flex-wrap: wrap;
   gap: 0.5rem;
   align-items: center;
-  font-size: 0.8rem;
+  font-size: 0.875rem;
   color: var(--muted);
 }
 
@@ -390,7 +390,7 @@ a {
 .point-actions select,
 .button-link {
   font: inherit;
-  font-size: 0.8rem;
+  font-size: 0.875rem;
   padding: 0.3rem 0.6rem;
   color: var(--ink);
   background: var(--bg);
@@ -402,7 +402,7 @@ a {
 
 .point-stats {
   margin: 0.4rem 0 0.2rem;
-  font-size: 0.85rem;
+  font-size: 0.95rem;
   color: var(--text-secondary);
   font-variant-numeric: tabular-nums;
 }
@@ -414,7 +414,7 @@ a {
 
 .arrow-strip-label {
   display: block;
-  font-size: 0.75rem;
+  font-size: 0.85rem;
   color: var(--muted);
   margin-bottom: 0.35rem;
 }
@@ -466,7 +466,7 @@ a {
 }
 
 .arrow-crop figcaption {
-  font-size: 0.72rem;
+  font-size: 0.8rem;
   color: var(--text-secondary);
   font-variant-numeric: tabular-nums;
 }
@@ -499,7 +499,7 @@ a {
 
 .chart-tick {
   fill: var(--text-muted);
-  font-size: 11px;
+  font-size: 12.5px;
   font-variant-numeric: tabular-nums;
 }
 
@@ -525,7 +525,7 @@ a {
 
 .chart-peak-label {
   fill: var(--text-secondary);
-  font-size: 11px;
+  font-size: 13px;
   font-weight: 600;
   font-variant-numeric: tabular-nums;
 }
@@ -537,7 +537,7 @@ a {
 
 .chart-caption {
   margin: 0.25rem 0 0;
-  font-size: 0.72rem;
+  font-size: 0.8rem;
   color: var(--text-muted);
 }
 
@@ -574,7 +574,7 @@ a {
 }
 
 .chart-tooltip span {
-  font-size: 0.72rem;
+  font-size: 0.8rem;
   color: var(--text-muted);
 }
 
@@ -587,7 +587,7 @@ a {
 .point-table table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 0.8rem;
+  font-size: 0.875rem;
   font-variant-numeric: tabular-nums;
 }
 
@@ -644,8 +644,8 @@ a {
   body {
     padding: 0;
     background: #fff;
-    font-size: 9pt;
-    line-height: 1.35;
+    font-size: 10.5pt;
+    line-height: 1.4;
   }
 
   /* 操作用のものは紙に不要 */
@@ -659,12 +659,12 @@ a {
   }
 
   .bar h1 {
-    font-size: 13pt;
+    font-size: 15pt;
     margin-bottom: 1mm;
   }
 
   .note {
-    font-size: 8pt;
+    font-size: 9.5pt;
     margin: 0 0 2mm;
   }
 
@@ -684,7 +684,7 @@ a {
 
   .panel-head {
     padding: 1mm 2mm;
-    font-size: 8.5pt;
+    font-size: 10pt;
   }
 
   .panel-body {
@@ -726,11 +726,11 @@ a {
   }
 
   .point-head h2 {
-    font-size: 10.5pt;
+    font-size: 12pt;
   }
 
   .point-stats {
-    font-size: 8.5pt;
+    font-size: 10pt;
     margin: 1mm 0;
   }
 
@@ -744,13 +744,13 @@ a {
 
   /* 矢印は紙では小さめでも向きが読めるので、場所を節約する */
   .arrow-crop-view {
-    width: 26mm;
-    height: 26mm;
+    width: 32mm;
+    height: 32mm;
     border: 0.3mm solid var(--line);
   }
 
   .arrow-crop figcaption {
-    font-size: 7.5pt;
+    font-size: 9pt;
   }
 
   .chart {
@@ -759,11 +759,11 @@ a {
   }
 
   .chart-svg {
-    max-height: 52mm;
+    max-height: 62mm;
   }
 
   .chart-caption {
-    font-size: 7.5pt;
+    font-size: 9pt;
   }
 
   /* 出典は利用ルール上も必要なので必ず紙に残す */
@@ -771,7 +771,7 @@ a {
     margin-top: 3mm;
     padding-top: 1.5mm;
     border-top: 1px solid var(--line);
-    font-size: 7.5pt;
+    font-size: 9pt;
     break-inside: avoid;
   }
 
