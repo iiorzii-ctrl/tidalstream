@@ -15,6 +15,7 @@ const pointTitle = document.getElementById('pointTitle');
 const pointStats = document.getElementById('pointStats');
 const pointTable = document.getElementById('pointTable');
 const chartEl = document.getElementById('chart');
+const arrowStrip = document.getElementById('arrowStrip');
 const seriesHoursEl = document.getElementById('seriesHours');
 const csvLink = document.getElementById('csvLink');
 
@@ -24,6 +25,10 @@ let candidateIndex = Number(localStorage.getItem(CANDIDATE_KEY) ?? 0) || 0;
 let selectedPoint = readSelectedPoint();
 // 推移を表示している海域。座標は海域ごとの画像に紐づくので、海域が変われば選択は無効になる
 let pointArea = selectedPoint?.area ?? null;
+// 直近に表示した各時刻のコマ（画像 URL 込み）と、元画像の実寸。
+// 選んだ地点の矢印を切り出して拡大表示するのに使う。
+let lastFrames = [];
+let frameNaturalSize = null;
 let autoRefreshTimer = null;
 let inFlight = null;
 let seriesInFlight = null;
@@ -161,6 +166,7 @@ function renderSkeleton(count) {
 function render(data) {
   framesEl.style.setProperty('--columns', String(data.frames.length));
   framesEl.innerHTML = '';
+  lastFrames = data.frames;
 
   for (const frame of data.frames) {
     const panel = document.createElement('section');
@@ -216,6 +222,9 @@ function renderStations(stage, img, frame) {
   const w = img.naturalWidth;
   const h = img.naturalHeight;
   if (!w || !h || !frame.stations?.length) return;
+  // 矢印の切り出しに使うので、元画像の実寸を覚えておく
+  frameNaturalSize = { width: w, height: h };
+  if (selectedPoint) renderArrowStrip();
 
   for (const station of frame.stations) {
     const dot = document.createElement('button');
@@ -258,7 +267,50 @@ function clearPoint() {
   pointArea = null;
   localStorage.removeItem(POINT_KEY);
   document.querySelectorAll('.station.is-selected').forEach((d) => d.classList.remove('is-selected'));
+  arrowStrip.hidden = true;
   pointSection.hidden = true;
+}
+
+/**
+ * 選んだ地点の矢印を、表示中の各時刻ぶん切り出して拡大表示する。
+ * 元画像そのものを CSS で拡大するだけなので、向きも速度も正確に伝わる
+ * （矢印の色が速度、矢の向きが流れの向き）。追加の解析はしない。
+ */
+function renderArrowStrip() {
+  const crops = document.getElementById('arrowCrops');
+  if (!selectedPoint || !frameNaturalSize || lastFrames.length === 0) {
+    arrowStrip.hidden = true;
+    return;
+  }
+
+  const { width: natW, height: natH } = frameNaturalSize;
+  const zoom = 3; // 拡大率
+  const box = 132; // 表示する一辺(px)
+  const { x, y } = selectedPoint;
+
+  crops.replaceChildren();
+  for (const frame of lastFrames) {
+    const url = frame.candidates[candidateIndex]?.proxiedUrl ?? frame.candidates[0]?.proxiedUrl;
+    const cell = document.createElement('figure');
+    cell.className = 'arrow-crop';
+
+    const view = document.createElement('div');
+    view.className = 'arrow-crop-view';
+    if (url) {
+      view.style.backgroundImage = `url("${url}")`;
+      view.style.backgroundSize = `${natW * zoom}px ${natH * zoom}px`;
+      // 地点(x,y)が枠の中央に来るように位置をずらす
+      view.style.backgroundPosition = `${box / 2 - x * zoom}px ${box / 2 - y * zoom}px`;
+    } else {
+      view.textContent = '—';
+    }
+
+    const caption = document.createElement('figcaption');
+    caption.textContent = frame.label.slice(11); // 時:分 だけ
+    cell.append(view, caption);
+    crops.append(cell);
+  }
+  arrowStrip.hidden = false;
 }
 
 async function loadSeries() {
@@ -288,6 +340,7 @@ async function loadSeries() {
       ? `最大 ${data.stats.max.toFixed(1)}kn（${data.stats.peakAt}）／最小 ${data.stats.min.toFixed(1)}kn／平均 ${data.stats.mean.toFixed(2)}kn`
       : '流速を取得できませんでした';
     pointArea = data.area;
+    renderArrowStrip();
     renderSeriesChart(chartEl, data);
     renderSeriesTable(pointTable, data);
   } catch (error) {
