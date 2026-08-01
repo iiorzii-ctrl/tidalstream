@@ -5,8 +5,10 @@
 
 import { timingSafeEqual } from 'node:crypto';
 
-const USER = process.env.AUTH_USER ?? '';
-const PASS = process.env.AUTH_PASS ?? '';
+// 管理画面の入力欄に貼り付けたときに紛れがちな前後の空白・改行は無視する。
+// （「見た目は正しいのに弾かれる」事故を防ぐため。値の途中の空白は残す）
+const USER = (process.env.AUTH_USER ?? '').trim();
+const PASS = (process.env.AUTH_PASS ?? '').trim();
 
 export const authEnabled = USER !== '' && PASS !== '';
 
