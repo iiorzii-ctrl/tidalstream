@@ -112,7 +112,12 @@ test('HTTP エンドポイントが一通り動く', async () => {
     assert.equal(page.status, 200);
     assert.match(await page.text(), /潮流推算ビューア/);
 
-    const api = await fetch(`${base}/api/frames?date=2026-07-31&hour=9&count=3&step=1`);
+    // 日付は今日を使う。固定の日付だと、日付範囲の制限（前後7日）に
+    // いずれ引っかかってテストが壊れるため。
+    const { year, month, day } = frames.nowInTokyo();
+    const pad = (n) => String(n).padStart(2, '0');
+    const today = `${year}-${pad(month)}-${pad(day)}`;
+    const api = await fetch(`${base}/api/frames?date=${today}&hour=9&count=3&step=1`);
     assert.equal(api.status, 200);
     const data = await api.json();
     assert.equal(data.frames.length, 3);

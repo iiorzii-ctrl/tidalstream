@@ -3,7 +3,8 @@ import { readFile } from 'node:fs/promises';
 import { extname, join, normalize } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { authEnabled, isAuthorized, warnIfExposed } from './src/auth.mjs';
+import { COOKIE_NAME, TOKEN_PARAM, authMode, checkAccess, cookieHeader, tokenAuthEnabled, warnIfExposed } from './src/auth.mjs';
+import { clientKey, dateRangeMessage, isRangeAllowed, rateLimit } from './src/guard.mjs';
 import { AREAS, DEFAULTS, PAGE_URL } from './src/config.mjs';
 import { HttpError, fetchImage, fetchPage } from './src/fetcher.mjs';
 import { collectFrames, collectSeries, nowInTokyo } from './src/frames.mjs';
@@ -31,12 +32,43 @@ const server = createServer(async (req, res) => {
       res.end('ok\n');
       return;
     }
-    if (!isAuthorized(req.headers.authorization)) {
-      res.writeHead(401, {
-        'www-authenticate': 'Basic realm="tidalstream", charset="UTF-8"',
-        'content-type': 'text/plain; charset=utf-8',
+    // 検索エンジンなどに拾われないようにする（秘密のリンクで使う前提）
+    if (url.pathname === '/robots.txt') {
+      res.writeHead(200, { 'content-type': 'text/plain; charset=utf-8' });
+      res.end('User-agent: *\nDisallow: /\n');
+      return;
+    }
+
+    const access = checkAccess({
+      authorization: req.headers.authorization,
+      cookie: req.headers.cookie,
+      tokenParam: url.searchParams.get(TOKEN_PARAM),
+    });
+    if (!access.ok) {
+      // 秘密のリンクだけの運用なら、認証ダイアログを出さずに素っ気なく断る
+      const headers = { 'content-type': 'text/plain; charset=utf-8' };
+      if (!tokenAuthEnabled) headers['www-authenticate'] = 'Basic realm="tidalstream", charset="UTF-8"';
+      res.writeHead(401, headers);
+      res.end('アクセスできません\n');
+      return;
+    }
+    if (access.setCookie) {
+      // 合鍵を Cookie に覚えさせ、URL から鍵を落として開き直させる
+      const secure = (req.headers['x-forwarded-proto'] ?? '').includes('https');
+      url.searchParams.delete(TOKEN_PARAM);
+      res.writeHead(302, {
+        'set-cookie': cookieHeader({ secure }),
+        location: url.pathname + (url.search || '') + url.hash,
+        'cache-control': 'no-store',
       });
-      res.end('認証が必要です\n');
+      res.end();
+      return;
+    }
+
+    const limit = rateLimit(clientKey(req));
+    if (!limit.allowed) {
+      res.writeHead(429, { 'content-type': 'text/plain; charset=utf-8', 'retry-after': '60' });
+      res.end('リクエストが多すぎます。少し待ってから開き直してください\n');
       return;
     }
     if (req.method !== 'GET' && req.method !== 'HEAD') {
@@ -62,6 +94,8 @@ async function handleFrames(url, res) {
   const stepHours = clampInt(url.searchParams.get('step'), DEFAULTS.stepHours, 1, 24);
   const start = parseStart(url.searchParams);
 
+  if (!isRangeAllowed(start, { count, stepHours })) throw new HttpError(400, dateRangeMessage());
+
   const result = await collectFrames({ area, start, count, stepHours });
 
   // 画像は自前のプロキシ経由で出す（Referer 制限とキャッシュのため）
@@ -81,12 +115,17 @@ function seriesOptions(url) {
   if (!Number.isFinite(x) || !Number.isFinite(y)) {
     throw new HttpError(400, '地点の座標 x, y を指定してください');
   }
+  const hours = clampInt(url.searchParams.get('hours'), 12, 1, 12);
+  const stepHours = clampInt(url.searchParams.get('step'), DEFAULTS.stepHours, 1, 24);
+  const start = parseStart(url.searchParams);
+  if (!isRangeAllowed(start, { count: hours, stepHours })) throw new HttpError(400, dateRangeMessage());
+
   return {
     area: url.searchParams.get('area') || DEFAULTS.area,
     // 1時間ぶんの取得ごとに上流で図が1枚生成されるので、上限も控えめにしておく
-    hours: clampInt(url.searchParams.get('hours'), 12, 1, 12),
-    stepHours: clampInt(url.searchParams.get('step'), DEFAULTS.stepHours, 1, 24),
-    start: parseStart(url.searchParams),
+    hours,
+    stepHours,
+    start,
     x,
     y,
   };
@@ -212,7 +251,7 @@ function sendJson(res, status, payload) {
 
 server.listen(PORT, HOST, () => {
   console.log(`tidalstream → http://${HOST}:${PORT}`);
-  console.log(authEnabled ? '認証: 有効（Basic 認証）' : '認証: なし');
+  console.log(`アクセス制限: ${authMode()}`);
   const warning = warnIfExposed(HOST);
   if (warning) console.warn(warning);
 });
