@@ -154,6 +154,11 @@ body {
   color: var(--muted);
 }
 
+/* display の指定が hidden 属性を打ち消してしまうので、明示的に消す */
+.controls label[hidden] {
+  display: none;
+}
+
 .controls label.check {
   flex-direction: row;
   align-items: center;

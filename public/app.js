@@ -86,7 +86,10 @@ function renderAreaOptions() {
     option.textContent = `${area.code} ${lang === 'en' ? (area.nameEn ?? area.name) : area.name}`;
     areaEl.append(option);
   }
-  if (current) areaEl.value = current;
+  if (current && availableAreas.some((a) => a.code === current)) areaEl.value = current;
+  else areaEl.value = availableAreas[0]?.code ?? '01';
+  // 選べる海域が1つだけなら、選択欄そのものを出さない（海域名は状況表示に出る）
+  areaEl.closest('label').hidden = availableAreas.length <= 1;
 }
 
 /** 表示中の海域名を、いまの言語で返す */
@@ -105,11 +108,12 @@ function initControls() {
   }
   setToNow();
 
-  // 前回の指定を復元する
+  // 前回の指定のうち、海域・間隔・枚数だけを復元する。
+  // 日時は復元せず常に現在時刻で開く。ブックマークや共有リンクには前回の
+  // 日時が残るため、復元すると古い日時のまま開いてしまうため。
   const saved = new URLSearchParams(location.hash.slice(1));
-  if (saved.get('area')) areaEl.value = saved.get('area');
-  if (saved.get('date')) dateEl.value = saved.get('date');
-  if (saved.get('hour')) hourEl.value = saved.get('hour');
+  // 開けていない海域が残っていることがあるので、選択肢にあるときだけ戻す
+  if (availableAreas.some((a) => a.code === saved.get('area'))) areaEl.value = saved.get('area');
   if (saved.get('step')) stepEl.value = saved.get('step');
   if (saved.get('count')) countEl.value = saved.get('count');
 }

@@ -112,7 +112,12 @@ test('HTTP エンドポイントが一通り動く', async () => {
     assert.equal(page.status, 200);
     assert.match(await page.text(), /潮流推算ビューア/);
 
-    const api = await fetch(`${base}/api/frames?date=2026-07-31&hour=9&count=3&step=1`);
+    // 日付は今日を使う。固定の日付だと、日付範囲の制限（前後7日）に
+    // いずれ引っかかってテストが壊れるため。
+    const { year, month, day } = frames.nowInTokyo();
+    const pad = (n) => String(n).padStart(2, '0');
+    const today = `${year}-${pad(month)}-${pad(day)}`;
+    const api = await fetch(`${base}/api/frames?date=${today}&hour=9&count=3&step=1`);
     assert.equal(api.status, 200);
     const data = await api.json();
     assert.equal(data.frames.length, 3);
@@ -121,6 +126,17 @@ test('HTTP エンドポイントが一通り動く', async () => {
     const image = await fetch(base + data.frames[2].proxiedImageUrl);
     assert.equal(image.status, 200);
     assert.equal(image.headers.get('content-type'), 'image/gif');
+
+    // 開けていない海域は、上流に触らずに断る
+    const areas = await (await fetch(`${base}/api/areas`)).json();
+    assert.deepEqual(areas.areas.map((a) => a.code), ['01']);
+    const upstreamBefore = stub.requests.length;
+    const otherArea = await fetch(`${base}/api/frames?area=03&date=${today}&hour=9&count=3`);
+    assert.equal(otherArea.status, 400);
+    assert.match((await otherArea.json()).error, /東京湾/);
+    assert.equal(stub.requests.length, upstreamBefore);
+    const otherSeries = await fetch(`${base}/api/series?area=03&date=${today}&hour=9&x=190&y=395`);
+    assert.equal(otherSeries.status, 400);
 
     const blocked = await fetch(`${base}/api/image?u=${encodeURIComponent('https://example.com/x.gif')}`);
     assert.equal(blocked.status, 403);
