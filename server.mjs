@@ -83,7 +83,8 @@ function seriesOptions(url) {
   }
   return {
     area: url.searchParams.get('area') || DEFAULTS.area,
-    hours: clampInt(url.searchParams.get('hours'), 24, 1, 48),
+    // 1時間ぶんの取得ごとに上流で図が1枚生成されるので、上限も控えめにしておく
+    hours: clampInt(url.searchParams.get('hours'), 12, 1, 24),
     stepHours: clampInt(url.searchParams.get('step'), DEFAULTS.stepHours, 1, 24),
     start: parseStart(url.searchParams),
     x,
