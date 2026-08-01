@@ -45,15 +45,8 @@ export const FORM_ROLE_HINTS = {
   area: /^(area|kaiiki|region|pref)$/i,
 };
 
-export const DEFAULTS = {
-  area: '01',
-  count: 3, // 横に並べる枚数
-  stepHours: 1, // 何時間おきか
-};
-
 // 上流ページで有効な海域コード（2026-08 時点で 01〜20。21 以降は図が無い）。
-// 画面の選択肢に使うだけで、これ以外のコードを指定してもリクエスト自体は通る。
-export const AREAS = [
+export const ALL_AREAS = [
   { code: '01', name: '東京湾', nameEn: 'Tokyo Bay' },
   { code: '02', name: '伊勢湾', nameEn: 'Ise Bay' },
   { code: '03', name: '瀬戸内沿岸', nameEn: 'Seto Inland Sea coast' },
@@ -75,3 +68,31 @@ export const AREAS = [
   { code: '19', name: '大東諸島', nameEn: 'Daito Islands' },
   { code: '20', name: '宮古島・石垣島・西表島', nameEn: 'Miyako, Ishigaki and Iriomote Islands' },
 ];
+
+// 実際に使う海域。既定は東京湾だけに絞っている。
+// 海域を増やすと上流（海上保安庁）へ生成を頼む図の組み合わせもその分増えるので、
+// 使わない海域は開けておかない。他の海域も見たくなったら ALLOWED_AREAS に
+// カンマ区切りで足す（例: ALLOWED_AREAS=01,02）。
+export const AREAS = (() => {
+  const codes = (process.env.ALLOWED_AREAS ?? '01')
+    .split(',')
+    .map((code) => code.trim())
+    .filter(Boolean);
+  const picked = ALL_AREAS.filter((area) => codes.includes(area.code));
+  // 綴り間違いなどで全部消えてしまうと何も表示できなくなるため、最低限を残す
+  return picked.length > 0 ? picked : ALL_AREAS.slice(0, 1);
+})();
+
+export function isAreaAllowed(code) {
+  return AREAS.some((area) => area.code === code);
+}
+
+export function areaMessage() {
+  return `指定できる海域は ${AREAS.map((a) => `${a.code} ${a.name}`).join('、')} だけです`;
+}
+
+export const DEFAULTS = {
+  area: AREAS[0].code,
+  count: 3, // 横に並べる枚数
+  stepHours: 1, // 何時間おきか
+};

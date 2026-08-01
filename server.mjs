@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url';
 
 import { COOKIE_NAME, TOKEN_PARAM, authMode, checkAccess, cookieHeader, tokenAuthEnabled, warnIfExposed } from './src/auth.mjs';
 import { clientKey, dateRangeMessage, isRangeAllowed, rateLimit } from './src/guard.mjs';
-import { AREAS, DEFAULTS, PAGE_URL } from './src/config.mjs';
+import { AREAS, DEFAULTS, PAGE_URL, areaMessage, isAreaAllowed } from './src/config.mjs';
 import { HttpError, fetchImage, fetchPage } from './src/fetcher.mjs';
 import { collectFrames, collectSeries, nowInTokyo } from './src/frames.mjs';
 import { buildPageUrl, discoverForm, extractImageCandidates } from './src/scraper.mjs';
@@ -88,8 +88,15 @@ const server = createServer(async (req, res) => {
   }
 });
 
+/** 指定された海域を取り出す。開けていない海域は上流を叩かずに断る。 */
+function resolveArea(params) {
+  const area = params.get('area') || DEFAULTS.area;
+  if (!isAreaAllowed(area)) throw new HttpError(400, areaMessage());
+  return area;
+}
+
 async function handleFrames(url, res) {
-  const area = url.searchParams.get('area') || DEFAULTS.area;
+  const area = resolveArea(url.searchParams);
   const count = clampInt(url.searchParams.get('count'), DEFAULTS.count, 1, 12);
   const stepHours = clampInt(url.searchParams.get('step'), DEFAULTS.stepHours, 1, 24);
   const start = parseStart(url.searchParams);
@@ -115,13 +122,14 @@ function seriesOptions(url) {
   if (!Number.isFinite(x) || !Number.isFinite(y)) {
     throw new HttpError(400, '地点の座標 x, y を指定してください');
   }
+  const area = resolveArea(url.searchParams);
   const hours = clampInt(url.searchParams.get('hours'), 12, 1, 12);
   const stepHours = clampInt(url.searchParams.get('step'), DEFAULTS.stepHours, 1, 24);
   const start = parseStart(url.searchParams);
   if (!isRangeAllowed(start, { count: hours, stepHours })) throw new HttpError(400, dateRangeMessage());
 
   return {
-    area: url.searchParams.get('area') || DEFAULTS.area,
+    area,
     // 1時間ぶんの取得ごとに上流で図が1枚生成されるので、上限も控えめにしておく
     hours,
     stepHours,
@@ -180,7 +188,7 @@ async function handleImage(url, res) {
 
 /** 上流ページの構造をそのまま見るための確認用エンドポイント */
 async function handleDebug(url, res) {
-  const area = url.searchParams.get('area') || DEFAULTS.area;
+  const area = resolveArea(url.searchParams);
   const pageUrl = buildPageUrl({ form: null, area, baseUrl: PAGE_URL });
   const page = await fetchPage(pageUrl);
   const form = discoverForm(page.html);
