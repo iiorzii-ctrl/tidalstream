@@ -1,4 +1,5 @@
 import { renderSeriesChart, renderSeriesTable } from './chart.js';
+import { applyStatic, lang, t, toggleLang } from './i18n.js';
 
 const form = document.getElementById('controls');
 const framesEl = document.getElementById('frames');
@@ -22,6 +23,8 @@ const csvLink = document.getElementById('csvLink');
 const CANDIDATE_KEY = 'tidalstream.candidateIndex';
 const POINT_KEY = 'tidalstream.point';
 let candidateIndex = Number(localStorage.getItem(CANDIDATE_KEY) ?? 0) || 0;
+let availableAreas = [];
+let lastData = null; // 言語切り替え時に再描画するために保持する
 let selectedPoint = readSelectedPoint();
 // 推移を表示している海域。座標は海域ごとの画像に紐づくので、海域が変われば選択は無効になる
 let pointArea = selectedPoint?.area ?? null;
@@ -62,16 +65,33 @@ function tokyoNow() {
 async function initAreas() {
   try {
     const { areas } = await (await fetch('/api/areas')).json();
-    for (const area of areas) {
-      const option = document.createElement('option');
-      option.value = area.code;
-      option.textContent = `${area.code} ${area.name}`;
-      areaEl.append(option);
-    }
+    availableAreas = areas;
+    renderAreaOptions();
   } catch {
     // 一覧が取れなくても既定の海域だけは選べるようにする
-    areaEl.innerHTML = '<option value="01">01 東京湾</option>';
+    availableAreas = [{ code: '01', name: '東京湾', nameEn: 'Tokyo Bay' }];
+    renderAreaOptions();
   }
+}
+
+/** 海域の選択肢を、いまの言語の名前で作り直す */
+function renderAreaOptions() {
+  const current = areaEl.value;
+  areaEl.replaceChildren();
+  for (const area of availableAreas) {
+    const option = document.createElement('option');
+    option.value = area.code;
+    option.textContent = `${area.code} ${lang === 'en' ? (area.nameEn ?? area.name) : area.name}`;
+    areaEl.append(option);
+  }
+  if (current) areaEl.value = current;
+}
+
+/** 表示中の海域名を、いまの言語で返す */
+function areaLabelFor(code, fallback) {
+  const area = availableAreas.find((a) => a.code === code);
+  if (!area) return fallback ?? '';
+  return lang === 'en' ? (area.nameEn ?? area.name) : area.name;
 }
 
 function initControls() {
@@ -116,13 +136,14 @@ async function load() {
   const controller = new AbortController();
   inFlight = controller;
 
-  setStatus('読み込み中…', 'busy');
+  setStatus(t('status.loading'), 'busy');
   renderSkeleton(Number(countEl.value));
 
   try {
     const response = await fetch(`/api/frames?${query}`, { signal: controller.signal });
     const data = await response.json();
     if (!response.ok) throw new Error(data.error ?? `HTTP ${response.status}`);
+    lastData = data;
     render(data);
 
     // 地点の座標は海域ごとの画像に紐づくので、海域が変わったら選択を持ち越さない。
@@ -131,17 +152,14 @@ async function load() {
     else if (selectedPoint) loadSeries();
 
     const failed = data.frames.filter((f) => !f.imageUrl).length;
-    const where = data.areaLabel ? `${data.areaLabel}／` : '';
-    setStatus(
-      failed === 0
-        ? `${where}${data.frames.length}枚を表示しました（${data.stepHours}時間間隔・日本時間）`
-        : `${where}${data.frames.length}枚中 ${failed}枚を取得できませんでした`,
-      failed === 0 ? 'ok' : 'warn',
-    );
+    const name = areaLabelFor(data.area, data.areaLabel);
+    const where = name ? `${name}${lang === 'en' ? ': ' : '／'}` : '';
+    const params = { area: where, count: data.frames.length, step: data.stepHours, failed };
+    setStatus(t(failed === 0 ? 'status.shown' : 'status.partial', params), failed === 0 ? 'ok' : 'warn');
   } catch (error) {
     if (error.name === 'AbortError') return;
     framesEl.innerHTML = '';
-    setStatus(`取得に失敗しました: ${error.message}`, 'error');
+    setStatus(t('status.failed', { message: error.message }), 'error');
   } finally {
     if (inFlight === controller) inFlight = null;
   }
@@ -187,9 +205,9 @@ function render(data) {
 
       const img = document.createElement('img');
       img.src = chosen.proxiedUrl;
-      img.alt = chosen.alt || `${frame.label} の潮流図`;
+      img.alt = t('frame.chartAlt', { time: frame.label });
       img.addEventListener('error', () => {
-        body.innerHTML = `<p class="error">画像を読み込めませんでした</p>`;
+        body.replaceChildren(Object.assign(document.createElement('p'), { className: 'error', textContent: t('frame.imageError') }));
       });
       // 地点の座標は元画像のピクセル基準なので、読み込み後の実寸を使って重ねる
       img.addEventListener('load', () => renderStations(stage, img, frame));
@@ -199,7 +217,7 @@ function render(data) {
     } else {
       const message = document.createElement('p');
       message.className = 'error';
-      message.textContent = frame.error ?? '画像が見つかりませんでした';
+      message.textContent = frame.error ?? t('frame.noImage');
       body.append(message);
     }
 
@@ -233,10 +251,10 @@ function renderStations(stage, img, frame) {
     dot.style.left = `${(station.x / w) * 100}%`;
     dot.style.top = `${(station.y / h) * 100}%`;
     dot.dataset.id = `${station.x},${station.y}`;
-    dot.title = `${station.knots.toFixed(1)}kn（${frame.label}）`;
+    dot.title = t('frame.stationTitle', { knots: station.knots.toFixed(1), time: frame.label });
     dot.setAttribute(
       'aria-label',
-      `地点 ${station.x},${station.y} の流速 ${station.knots.toFixed(1)}ノット。選ぶと推移を表示します`,
+      t('frame.stationAria', { x: station.x, y: station.y, knots: station.knots.toFixed(1) }),
     );
     if (selectedPoint && selectedPoint.x === station.x && selectedPoint.y === station.y) {
       dot.classList.add('is-selected');
@@ -325,7 +343,7 @@ async function loadSeries() {
 
   csvLink.href = `/api/series.csv?${query}`;
   pointSection.hidden = false;
-  pointStats.textContent = '読み込み中…';
+  pointStats.textContent = t('status.loading');
   chartEl.classList.add('is-loading'); // 再取得中も前の描画を保つ
 
   if (seriesInFlight) seriesInFlight.abort();
@@ -337,17 +355,22 @@ async function loadSeries() {
     const data = await response.json();
     if (!response.ok) throw new Error(data.error ?? `HTTP ${response.status}`);
 
-    pointTitle.textContent = `地点 (${data.station.x}, ${data.station.y}) の流速`;
+    pointTitle.textContent = t('point.titleAt', { x: data.station.x, y: data.station.y });
     pointStats.textContent = data.stats
-      ? `最大 ${data.stats.max.toFixed(1)}kn（${data.stats.peakAt}）／最小 ${data.stats.min.toFixed(1)}kn／平均 ${data.stats.mean.toFixed(2)}kn`
-      : '流速を取得できませんでした';
+      ? t('point.stats', {
+          max: data.stats.max.toFixed(1),
+          peakAt: data.stats.peakAt,
+          min: data.stats.min.toFixed(1),
+          mean: data.stats.mean.toFixed(2),
+        })
+      : t('point.statsNone');
     pointArea = data.area;
     renderArrowStrip();
     renderSeriesChart(chartEl, data);
     renderSeriesTable(pointTable, data);
   } catch (error) {
     if (error.name === 'AbortError') return;
-    pointStats.textContent = `推移を取得できませんでした: ${error.message}`;
+    pointStats.textContent = t('point.seriesFailed', { message: error.message });
     chartEl.replaceChildren();
   } finally {
     chartEl.classList.remove('is-loading');
@@ -360,7 +383,7 @@ function buildCandidatePicker(frame) {
   wrap.className = 'candidates';
 
   const label = document.createElement('label');
-  label.textContent = '候補 ';
+  label.textContent = `${t('frame.candidates')} `;
 
   const select = document.createElement('select');
   frame.candidates.forEach((candidate, index) => {
@@ -417,9 +440,37 @@ document.getElementById('toggleTable').addEventListener('click', (event) => {
   const open = pointTable.hidden;
   pointTable.hidden = !open;
   event.currentTarget.setAttribute('aria-expanded', String(open));
-  event.currentTarget.textContent = open ? '表を隠す' : '表で見る';
+  event.currentTarget.textContent = t(open ? 'point.hideTable' : 'point.showTable');
 });
 
+// 言語切り替え。取得済みのデータを使い直すので、上流には取りに行かない。
+document.getElementById('langToggle').addEventListener('click', () => {
+  toggleLang();
+  applyStatic();
+  renderAreaOptions();
+  if (lastData) {
+    render(lastData);
+    const name = areaLabelFor(lastData.area, lastData.areaLabel);
+    const where = name ? `${name}${lang === 'en' ? ': ' : '／'}` : '';
+    const failed = lastData.frames.filter((f) => !f.imageUrl).length;
+    setStatus(
+      t(failed === 0 ? 'status.shown' : 'status.partial', {
+        area: where,
+        count: lastData.frames.length,
+        step: lastData.stepHours,
+        failed,
+      }),
+      failed === 0 ? 'ok' : 'warn',
+    );
+  }
+  // 表の開閉状態に合わせてボタンの文言を戻す
+  document.getElementById('toggleTable').textContent = t(
+    pointTable.hidden ? 'point.showTable' : 'point.hideTable',
+  );
+  if (selectedPoint) loadSeries();
+});
+
+applyStatic();
 await initAreas();
 initControls();
 // 前回選んだ地点があれば、load() の中で推移も復元される

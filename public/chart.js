@@ -6,6 +6,8 @@
 // - 縦のクロスヘアがポインタに追従し、最も近い時刻に吸着する
 // - ホバーで見える値は表示・CSV でも取れる（ツールチップだけの情報にしない）
 
+import { t } from './i18n.js';
+
 const NS = 'http://www.w3.org/2000/svg';
 
 const PAD = { top: 18, right: 16, bottom: 30, left: 42 };
@@ -32,7 +34,7 @@ export function renderSeriesChart(container, series) {
   if (points.length === 0) {
     const p = document.createElement('p');
     p.className = 'error';
-    p.textContent = 'この地点の流速を取得できませんでした';
+    p.textContent = t('chart.noData');
     container.append(p);
     return;
   }
@@ -52,15 +54,16 @@ export function renderSeriesChart(container, series) {
     viewBox: `0 0 ${width} ${height}`,
     class: 'chart-svg',
     role: 'img',
-    'aria-label': `${series.station.x},${series.station.y} 地点の流速の推移`,
+    'aria-label': t('chart.aria', { x: series.station.x, y: series.station.y }),
   });
 
   // --- 目盛り（ヘアライン・実線・控えめ）
-  for (const t of ticks) {
-    const y = yAt(t);
+  // 変数名は tick。t は翻訳関数なので、ここで覆い隠さないようにする
+  for (const tick of ticks) {
+    const y = yAt(tick);
     svg.append(el('line', { x1: PAD.left, y1: y, x2: width - PAD.right, y2: y, class: 'chart-grid' }));
     const label = el('text', { x: PAD.left - 8, y: y + 4, class: 'chart-tick', 'text-anchor': 'end' });
-    label.textContent = t.toFixed(t % 1 === 0 ? 0 : 1);
+    label.textContent = tick.toFixed(tick % 1 === 0 ? 0 : 1);
     svg.append(label);
   }
 
@@ -118,7 +121,7 @@ export function renderSeriesChart(container, series) {
     fill: 'transparent',
     tabindex: 0,
     role: 'application',
-    'aria-label': '流速の推移。左右キーで時刻を移動できます',
+    'aria-label': t('chart.plotAria'),
   });
   svg.append(focusLayer);
 
@@ -138,7 +141,7 @@ export function renderSeriesChart(container, series) {
 
     tooltip.replaceChildren();
     const value = document.createElement('strong');
-    value.textContent = `${p.knots.toFixed(1)} kn`;
+    value.textContent = t('chart.knots', { value: p.knots.toFixed(1) });
     const when = document.createElement('span');
     when.textContent = p.label; // 外部由来の文字列は textContent で入れる
     tooltip.append(value, when);
@@ -177,7 +180,7 @@ export function renderSeriesChart(container, series) {
   // 軸の単位は目盛りの中に置くと右端のラベルと重なるので、図の外に出す
   const caption = document.createElement('p');
   caption.className = 'chart-caption';
-  caption.textContent = '横軸: 時（日本時間）／縦軸: 流速（ノット）';
+  caption.textContent = t('chart.caption');
 
   container.append(svg, caption, tooltip);
 }
@@ -187,7 +190,7 @@ export function renderSeriesTable(container, series) {
   container.replaceChildren();
   const table = document.createElement('table');
   const head = table.createTHead().insertRow();
-  for (const text of ['日時（JST）', '流速']) {
+  for (const text of [t('chart.tableTime'), t('chart.tableKnots')]) {
     const th = document.createElement('th');
     th.textContent = text;
     head.append(th);
@@ -196,7 +199,7 @@ export function renderSeriesTable(container, series) {
   for (const p of series.points) {
     const row = body.insertRow();
     row.insertCell().textContent = p.label;
-    row.insertCell().textContent = p.knots === null ? '—' : `${p.knots.toFixed(1)} kn`;
+    row.insertCell().textContent = p.knots === null ? '—' : t('chart.knots', { value: p.knots.toFixed(1) });
   }
   container.append(table);
 }
