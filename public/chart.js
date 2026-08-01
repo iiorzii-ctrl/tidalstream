@@ -44,11 +44,11 @@ let printing = false;
 // 印刷時のグラフの幅（横向き A4 で、矢印の列を除いた右側のおよその幅）。
 // 印刷レイアウトは画面の DOM を作り直さないので clientWidth は画面幅のまま。
 // そのため印刷直前にこの幅で描き直し、紙の上で等倍になるようにする。
-// 横向き A4 で、矢印の列を除いた右側の実寸（幅 約217mm = 820px、高さ 約31mm）。
+// 横向き A4 で、矢印の列を除いた右側の実寸（幅 約217mm = 820px、高さ 約39mm）。
 // 実際に印刷レイアウトで測った値。縦横比も枠に合わせないと、高さで頭打ちになって
 // 横に細くなってしまう。ここが紙の上での等倍になるので、文字も指定どおりの大きさになる。
 const PRINT_WIDTH = 820;
-const PRINT_HEIGHT = 118;
+const PRINT_HEIGHT = 148;
 
 function watchResize(container) {
   if (observer || typeof ResizeObserver === 'undefined') return;

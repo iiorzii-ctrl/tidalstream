@@ -703,19 +703,18 @@ a {
 
   /* 紙では見出し周りを詰める（画面ほど余白を取らない） */
   .bar {
-    margin-bottom: 3mm;
-    padding-bottom: 1.5mm;
-    border-bottom: 0.5mm solid #000;
-  }
-
-  .bar h1 {
-    font-size: 13pt;
-    margin-bottom: 0;
+    margin-bottom: 2mm;
+    padding-bottom: 1mm;
+    border-bottom: 0.4mm solid #000;
   }
 
   .eyebrow {
-    font-size: 8.5pt;
-    letter-spacing: 0.1em;
+    display: none; /* 出典は下に書いてあるので紙では省く */
+  }
+
+  .bar h1 {
+    font-size: 12pt;
+    margin-bottom: 0;
   }
 
   .point {
@@ -734,7 +733,7 @@ a {
   /* 3枚の潮流図を横一列のまま、紙幅に合わせて縮める */
   .frames {
     grid-template-columns: repeat(var(--columns, 3), 1fr);
-    gap: 4mm;
+    gap: 2.5mm;
     overflow: visible;
     padding: 0;
   }
@@ -743,7 +742,7 @@ a {
      上限 79mm は、紙の高さ 192mm に全体が収まる実測値から決めた。 */
   .panel-body img {
     width: 100%;
-    max-width: 77mm;
+    max-width: 90mm;
   }
 
   /* 横向きは高さが厳しいので説明文は省く */
@@ -758,12 +757,12 @@ a {
   }
 
   .panel-head {
-    padding: 1mm 2mm;
-    font-size: 10pt;
+    padding: 0.6mm 1.5mm;
+    font-size: 9pt;
   }
 
   .panel-body {
-    padding: 0.8mm;
+    padding: 0.4mm;
     min-height: 0;
   }
 
@@ -793,8 +792,8 @@ a {
   /* 地点の詳細 */
   /* 横に広い紙面を活かし、矢印の拡大とグラフを左右に並べる */
   .point {
-    margin-top: 2.5mm;
-    padding: 1.5mm 0 0;
+    margin-top: 1.5mm;
+    padding: 1mm 0 0;
     border: 0;
     border-top: 0.5mm solid #000;
     border-radius: 0;
@@ -805,7 +804,7 @@ a {
       'head head'
       'stats stats'
       'arrows chart';
-    gap: 1mm 6mm;
+    gap: 0.5mm 5mm;
     align-items: start;
   }
 
@@ -815,7 +814,7 @@ a {
 
   .point-stats {
     grid-area: stats;
-    margin: 0.5mm 0;
+    margin: 0;
   }
 
   .arrow-strip {
@@ -829,7 +828,7 @@ a {
   }
 
   .point-head h2 {
-    font-size: 11pt;
+    font-size: 10.5pt;
   }
 
   .point-stats {
@@ -847,8 +846,8 @@ a {
 
   /* 矢印は紙では小さめでも向きが読めるので、場所を節約する */
   .arrow-crop-view {
-    width: 23mm;
-    height: 23mm;
+    width: 26mm;
+    height: 26mm;
     border: 0.3mm solid var(--line);
   }
 
@@ -882,17 +881,23 @@ a {
     stroke-width: 1;
   }
 
+  /* 単位は上の統計行（最大 1.7kn …）と各図の日時で分かるので、紙では省く */
   .chart-caption {
-    font-size: 9pt;
+    display: none;
   }
 
   /* 出典は利用ルール上も必要なので必ず紙に残す */
   .foot {
-    margin-top: 1mm;
-    padding-top: 1mm;
+    margin-top: 0.5mm;
+    padding-top: 0.8mm;
     border-top: 1px solid var(--line);
-    font-size: 9pt;
+    font-size: 8.5pt;
+    line-height: 1.25;
     break-inside: avoid;
+  }
+
+  .foot p {
+    margin: 0;
   }
 
   .foot a {
