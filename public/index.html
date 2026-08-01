@@ -58,6 +58,28 @@
 
     <main id="frames" class="frames"></main>
 
+    <section id="point" class="point" hidden>
+      <div class="point-head">
+        <h2 id="pointTitle">地点の流速</h2>
+        <div class="point-actions">
+          <label>
+            期間
+            <select id="seriesHours">
+              <option value="12">12時間</option>
+              <option value="24" selected>24時間</option>
+              <option value="48">48時間</option>
+            </select>
+          </label>
+          <button type="button" id="toggleTable" aria-expanded="false">表で見る</button>
+          <a id="csvLink" class="button-link" href="#" download>CSV</a>
+          <button type="button" id="clearPoint">選択を解除</button>
+        </div>
+      </div>
+      <p id="pointStats" class="point-stats"></p>
+      <div id="chart" class="chart"></div>
+      <div id="pointTable" class="point-table" hidden></div>
+    </section>
+
     <footer class="foot">
       <p>
         画像の出典:
@@ -67,6 +89,10 @@
           target="_blank"
           >海上保安庁 海洋情報部 潮流推算</a
         >
+      </p>
+      <p>
+        図の上の丸印は流速の観測地点です。クリックすると、その地点の流速の推移を下に表示します。
+        取得できるのは流速（ノット）のみで、流向は含まれません。
       </p>
       <p>
         図が想定と違うときは各パネルの「候補」から選び直してください。選択は次回以降も同じ順位の候補が使われます。

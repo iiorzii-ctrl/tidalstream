@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url';
 
 import { AREAS, DEFAULTS, PAGE_URL } from './src/config.mjs';
 import { HttpError, fetchImage, fetchPage } from './src/fetcher.mjs';
-import { collectFrames, nowInTokyo } from './src/frames.mjs';
+import { collectFrames, collectSeries, nowInTokyo } from './src/frames.mjs';
 import { buildPageUrl, discoverForm, extractImageCandidates } from './src/scraper.mjs';
 
 const PUBLIC_DIR = fileURLToPath(new URL('./public/', import.meta.url));
@@ -28,6 +28,8 @@ const server = createServer(async (req, res) => {
     }
     if (url.pathname === '/api/areas') return sendJson(res, 200, { areas: AREAS });
     if (url.pathname === '/api/frames') return await handleFrames(url, res);
+    if (url.pathname === '/api/series') return await handleSeries(url, res);
+    if (url.pathname === '/api/series.csv') return await handleSeriesCsv(url, res);
     if (url.pathname === '/api/image') return await handleImage(url, res);
     if (url.pathname === '/api/debug') return await handleDebug(url, res);
     return await handleStatic(url, res);
@@ -55,6 +57,54 @@ async function handleFrames(url, res) {
   }
 
   sendJson(res, 200, result);
+}
+
+function seriesOptions(url) {
+  const x = Number.parseFloat(url.searchParams.get('x') ?? '');
+  const y = Number.parseFloat(url.searchParams.get('y') ?? '');
+  if (!Number.isFinite(x) || !Number.isFinite(y)) {
+    throw new HttpError(400, '地点の座標 x, y を指定してください');
+  }
+  return {
+    area: url.searchParams.get('area') || DEFAULTS.area,
+    hours: clampInt(url.searchParams.get('hours'), 24, 1, 48),
+    stepHours: clampInt(url.searchParams.get('step'), DEFAULTS.stepHours, 1, 24),
+    start: parseStart(url.searchParams),
+    x,
+    y,
+  };
+}
+
+async function handleSeries(url, res) {
+  sendJson(res, 200, await collectSeries(seriesOptions(url)));
+}
+
+async function handleSeriesCsv(url, res) {
+  const series = await collectSeries(seriesOptions(url));
+  const rows = [
+    ['datetime_jst', 'area', 'area_name', 'station_x', 'station_y', 'knots'],
+    ...series.points.map((p) => [
+      p.label,
+      series.area,
+      series.areaLabel ?? '',
+      series.station.x,
+      series.station.y,
+      p.knots ?? '',
+    ]),
+  ];
+  const csv = rows.map((row) => row.map(csvCell).join(',')).join('\r\n');
+  const body = Buffer.from(`﻿${csv}\r\n`, 'utf8'); // Excel 用に BOM を付ける
+  res.writeHead(200, {
+    'content-type': 'text/csv; charset=utf-8',
+    'content-length': body.length,
+    'content-disposition': `attachment; filename="tidalstream_${series.area}_${series.station.x}-${series.station.y}.csv"`,
+  });
+  res.end(body);
+}
+
+function csvCell(value) {
+  const text = String(value ?? '');
+  return /[",\r\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
 }
 
 async function handleImage(url, res) {

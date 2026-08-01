@@ -1,3 +1,5 @@
+import { renderSeriesChart, renderSeriesTable } from './chart.js';
+
 const form = document.getElementById('controls');
 const framesEl = document.getElementById('frames');
 const statusEl = document.getElementById('status');
@@ -8,10 +10,30 @@ const stepEl = document.getElementById('step');
 const countEl = document.getElementById('count');
 const autoRefreshEl = document.getElementById('autoRefresh');
 
+const pointSection = document.getElementById('point');
+const pointTitle = document.getElementById('pointTitle');
+const pointStats = document.getElementById('pointStats');
+const pointTable = document.getElementById('pointTable');
+const chartEl = document.getElementById('chart');
+const seriesHoursEl = document.getElementById('seriesHours');
+const csvLink = document.getElementById('csvLink');
+
 const CANDIDATE_KEY = 'tidalstream.candidateIndex';
+const POINT_KEY = 'tidalstream.point';
 let candidateIndex = Number(localStorage.getItem(CANDIDATE_KEY) ?? 0) || 0;
+let selectedPoint = readSelectedPoint();
 let autoRefreshTimer = null;
 let inFlight = null;
+let seriesInFlight = null;
+
+function readSelectedPoint() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(POINT_KEY) ?? 'null');
+    return saved && Number.isFinite(saved.x) && Number.isFinite(saved.y) ? saved : null;
+  } catch {
+    return null;
+  }
+}
 
 function tokyoNow() {
   const parts = new Intl.DateTimeFormat('en-CA', {
@@ -146,22 +168,20 @@ function render(data) {
 
     const chosen = frame.candidates[candidateIndex] ?? frame.candidates[0];
     if (chosen) {
-      const link = document.createElement('a');
-      link.href = frame.pageUrl;
-      link.target = '_blank';
-      link.rel = 'noreferrer noopener';
-      link.title = '元ページを開く';
+      const stage = document.createElement('div');
+      stage.className = 'stage';
 
       const img = document.createElement('img');
       img.src = chosen.proxiedUrl;
       img.alt = chosen.alt || `${frame.label} の潮流図`;
-      img.loading = 'lazy';
       img.addEventListener('error', () => {
         body.innerHTML = `<p class="error">画像を読み込めませんでした</p>`;
       });
+      // 地点の座標は元画像のピクセル基準なので、読み込み後の実寸を使って重ねる
+      img.addEventListener('load', () => renderStations(stage, img, frame));
 
-      link.append(img);
-      body.append(link);
+      stage.append(img);
+      body.append(stage);
     } else {
       const message = document.createElement('p');
       message.className = 'error';
@@ -176,6 +196,96 @@ function render(data) {
     }
 
     framesEl.append(panel);
+  }
+}
+
+/**
+ * 潮流図の上に流速の観測地点を重ねる。
+ * 丸そのものは控えめにして、選択のための当たり判定を広く取る。
+ */
+function renderStations(stage, img, frame) {
+  stage.querySelectorAll('.station').forEach((n) => n.remove());
+  const w = img.naturalWidth;
+  const h = img.naturalHeight;
+  if (!w || !h || !frame.stations?.length) return;
+
+  for (const station of frame.stations) {
+    const dot = document.createElement('button');
+    dot.type = 'button';
+    dot.className = 'station';
+    dot.style.left = `${(station.x / w) * 100}%`;
+    dot.style.top = `${(station.y / h) * 100}%`;
+    dot.dataset.id = `${station.x},${station.y}`;
+    dot.title = `${station.knots.toFixed(1)}kn（${frame.label}）`;
+    dot.setAttribute(
+      'aria-label',
+      `地点 ${station.x},${station.y} の流速 ${station.knots.toFixed(1)}ノット。選ぶと推移を表示します`,
+    );
+    if (selectedPoint && selectedPoint.x === station.x && selectedPoint.y === station.y) {
+      dot.classList.add('is-selected');
+    }
+
+    const value = document.createElement('span');
+    value.className = 'station-value';
+    value.textContent = station.knots.toFixed(1);
+    dot.append(value);
+
+    dot.addEventListener('click', () => selectPoint({ x: station.x, y: station.y }));
+    stage.append(dot);
+  }
+}
+
+function selectPoint(point) {
+  selectedPoint = point;
+  localStorage.setItem(POINT_KEY, JSON.stringify(point));
+  document.querySelectorAll('.station').forEach((dot) => {
+    dot.classList.toggle('is-selected', dot.dataset.id === `${point.x},${point.y}`);
+  });
+  loadSeries();
+}
+
+function clearPoint() {
+  selectedPoint = null;
+  localStorage.removeItem(POINT_KEY);
+  document.querySelectorAll('.station.is-selected').forEach((d) => d.classList.remove('is-selected'));
+  pointSection.hidden = true;
+}
+
+async function loadSeries() {
+  if (!selectedPoint) return;
+  const query = currentQuery();
+  query.set('x', String(selectedPoint.x));
+  query.set('y', String(selectedPoint.y));
+  query.set('hours', seriesHoursEl.value);
+  query.delete('count');
+
+  csvLink.href = `/api/series.csv?${query}`;
+  pointSection.hidden = false;
+  pointStats.textContent = '読み込み中…';
+  chartEl.classList.add('is-loading'); // 再取得中も前の描画を保つ
+
+  if (seriesInFlight) seriesInFlight.abort();
+  const controller = new AbortController();
+  seriesInFlight = controller;
+
+  try {
+    const response = await fetch(`/api/series?${query}`, { signal: controller.signal });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error ?? `HTTP ${response.status}`);
+
+    pointTitle.textContent = `地点 (${data.station.x}, ${data.station.y}) の流速`;
+    pointStats.textContent = data.stats
+      ? `最大 ${data.stats.max.toFixed(1)}kn（${data.stats.peakAt}）／最小 ${data.stats.min.toFixed(1)}kn／平均 ${data.stats.mean.toFixed(2)}kn`
+      : '流速を取得できませんでした';
+    renderSeriesChart(chartEl, data);
+    renderSeriesTable(pointTable, data);
+  } catch (error) {
+    if (error.name === 'AbortError') return;
+    pointStats.textContent = `推移を取得できませんでした: ${error.message}`;
+    chartEl.replaceChildren();
+  } finally {
+    chartEl.classList.remove('is-loading');
+    if (seriesInFlight === controller) seriesInFlight = null;
   }
 }
 
@@ -232,7 +342,18 @@ document.getElementById('now').addEventListener('click', () => {
 });
 
 autoRefreshEl.addEventListener('change', scheduleAutoRefresh);
+seriesHoursEl.addEventListener('change', loadSeries);
+document.getElementById('clearPoint').addEventListener('click', clearPoint);
+
+document.getElementById('toggleTable').addEventListener('click', (event) => {
+  const open = pointTable.hidden;
+  pointTable.hidden = !open;
+  event.currentTarget.setAttribute('aria-expanded', String(open));
+  event.currentTarget.textContent = open ? '表を隠す' : '表で見る';
+});
 
 await initAreas();
 initControls();
-load();
+await load();
+// 前回選んだ地点があれば推移も復元する
+if (selectedPoint) loadSeries();

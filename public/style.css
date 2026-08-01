@@ -7,6 +7,15 @@
   --line: #d9dee5;
   --accent: #12608f;
   --error: #b3261e;
+
+  /* グラフ用。単一系列なので系列色は1つだけ使う。
+     検証済み: 明背景 #ffffff / 暗背景 #1c2229 の両方で全チェック PASS */
+  --series-1: #2a78d6;
+  --text-primary: #0b0b0b;
+  --text-secondary: #52514e;
+  --text-muted: #898781;
+  --gridline: #e1e0d9;
+  --baseline: #c3c2b7;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -18,6 +27,19 @@
     --line: #2e3742;
     --accent: #6fb6e6;
     --error: #ef9a93;
+
+    /* 暗背景用に取り直した値。明側の自動反転ではない */
+    --series-1: #3987e5;
+    --text-primary: #ffffff;
+    --text-secondary: #c3c2b7;
+    --text-muted: #898781;
+    --gridline: #2c2c2a;
+    --baseline: #383835;
+  }
+
+  /* 図の上のマーカーは、暗所でも図（明るい地図）の上に載るので明側の値を保つ */
+  .station::before {
+    border-color: rgba(11, 11, 11, 0.5);
   }
 }
 
@@ -183,6 +205,88 @@ body {
   text-align: center;
 }
 
+/* --- 図の上に重ねる流速の観測地点 --- */
+.stage {
+  position: relative;
+  display: inline-block;
+  line-height: 0;
+}
+
+/* 見た目の丸は控えめに、当たり判定は 24px 確保する */
+.station {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  display: grid;
+  place-items: center;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+}
+
+/* 図そのものが主役なので、地点の丸は既定では出さない。
+   図にマウスを乗せたときだけ薄く出し、クリックできる場所を示す。 */
+.station::before {
+  content: '';
+  position: absolute;
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  border: 1.5px solid transparent;
+  background: transparent;
+  transition: border-color 0.12s ease, background-color 0.12s ease;
+}
+
+.stage:hover .station::before {
+  border-color: rgba(11, 11, 11, 0.3);
+  background: rgba(255, 255, 255, 0.25);
+}
+
+.station:hover::before,
+.station:focus-visible::before {
+  border-color: var(--accent);
+  border-width: 2px;
+  background: rgba(255, 255, 255, 0.8);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .station::before {
+    transition: none;
+  }
+}
+
+.station.is-selected::before {
+  width: 15px;
+  height: 15px;
+  border: 2px solid var(--series-1);
+  box-shadow: 0 0 0 2px var(--panel);
+  background: rgba(255, 255, 255, 0.5);
+}
+
+/* 数値は選択中と hover のときだけ出す（全点に数値を出さない） */
+.station-value {
+  position: absolute;
+  top: -14px;
+  font-size: 0.65rem;
+  font-weight: 600;
+  line-height: 1;
+  padding: 1px 3px;
+  border-radius: 3px;
+  color: var(--ink);
+  background: var(--panel);
+  opacity: 0;
+  pointer-events: none;
+  font-variant-numeric: tabular-nums;
+}
+
+.station:hover .station-value,
+.station:focus-visible .station-value,
+.station.is-selected .station-value {
+  opacity: 1;
+}
+
 .candidates {
   padding: 0.4rem 0.75rem 0.6rem;
   border-top: 1px solid var(--line);
@@ -202,4 +306,178 @@ body {
 
 a {
   color: var(--accent);
+}
+
+/* --- 特定地点の流速の推移 --- */
+.point {
+  margin-top: 1.25rem;
+  padding: 0.9rem 1rem 1rem;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+}
+
+.point-head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1rem;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.point-head h2 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.point-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+.point-actions button,
+.point-actions select,
+.button-link {
+  font: inherit;
+  font-size: 0.8rem;
+  padding: 0.3rem 0.6rem;
+  color: var(--ink);
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.point-stats {
+  margin: 0.4rem 0 0.2rem;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+.chart {
+  position: relative;
+  margin-top: 0.25rem;
+}
+
+.chart.is-loading {
+  opacity: 0.55; /* 再取得中も前の描画を保つ */
+}
+
+.chart-svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+
+.chart-grid {
+  stroke: var(--gridline);
+  stroke-width: 1;
+}
+
+.chart-axis {
+  stroke: var(--baseline);
+  stroke-width: 1;
+}
+
+.chart-tick {
+  fill: var(--text-muted);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+
+.chart-line {
+  fill: none;
+  stroke: var(--series-1);
+  stroke-width: 2;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+
+.chart-area {
+  fill: var(--series-1);
+  opacity: 0.1;
+}
+
+.chart-peak,
+.chart-cursor {
+  fill: var(--series-1);
+  stroke: var(--panel);
+  stroke-width: 2;
+}
+
+.chart-peak-label {
+  fill: var(--text-secondary);
+  font-size: 11px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.chart-crosshair {
+  stroke: var(--baseline);
+  stroke-width: 1;
+}
+
+.chart-svg [tabindex]:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.chart-tooltip {
+  position: absolute;
+  transform: translate(-50%, calc(-100% - 14px));
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding: 0.3rem 0.5rem;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+.chart-tooltip strong {
+  font-size: 0.95rem;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.chart-tooltip span {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+
+.point-table {
+  margin-top: 0.75rem;
+  max-height: 260px;
+  overflow-y: auto;
+}
+
+.point-table table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.point-table th,
+.point-table td {
+  padding: 0.25rem 0.5rem;
+  text-align: left;
+  border-bottom: 1px solid var(--line);
+}
+
+.point-table th {
+  position: sticky;
+  top: 0;
+  background: var(--panel);
+  color: var(--text-secondary);
 }
