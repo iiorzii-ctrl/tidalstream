@@ -105,11 +105,11 @@ function initControls() {
   }
   setToNow();
 
-  // 前回の指定を復元する
+  // 前回の指定のうち、海域・間隔・枚数だけを復元する。
+  // 日時は復元せず常に現在時刻で開く。ブックマークや共有リンクには前回の
+  // 日時が残るため、復元すると古い日時のまま開いてしまうため。
   const saved = new URLSearchParams(location.hash.slice(1));
   if (saved.get('area')) areaEl.value = saved.get('area');
-  if (saved.get('date')) dateEl.value = saved.get('date');
-  if (saved.get('hour')) hourEl.value = saved.get('hour');
   if (saved.get('step')) stepEl.value = saved.get('step');
   if (saved.get('count')) countEl.value = saved.get('count');
 }
