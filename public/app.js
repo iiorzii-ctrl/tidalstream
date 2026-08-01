@@ -284,8 +284,7 @@ function renderArrowStrip() {
   }
 
   const { width: natW, height: natH } = frameNaturalSize;
-  const zoom = 3; // 拡大率
-  const box = 132; // 表示する一辺(px)
+  const zoom = 2; // 拡大率。上げすぎると矢印だけで埋まり、周りとの関係が見えなくなる
   const { x, y } = selectedPoint;
 
   crops.replaceChildren();
@@ -299,8 +298,11 @@ function renderArrowStrip() {
     if (url) {
       view.style.backgroundImage = `url("${url}")`;
       view.style.backgroundSize = `${natW * zoom}px ${natH * zoom}px`;
-      // 地点(x,y)が枠の中央に来るように位置をずらす
-      view.style.backgroundPosition = `${box / 2 - x * zoom}px ${box / 2 - y * zoom}px`;
+      // 地点(x,y)を枠の中央に置く。background-position の % は「画像とコンテナの
+      // 中心合わせ」なので、渡すのは画像中心からのズレ。こうすると枠の大きさ
+      // （画面では px、印刷では mm）が変わっても中央にそろう。
+      view.style.setProperty('--point-x', `${(x - natW / 2) * zoom}px`);
+      view.style.setProperty('--point-y', `${(y - natH / 2) * zoom}px`);
     } else {
       view.textContent = '—';
     }
@@ -399,6 +401,8 @@ form.addEventListener('submit', (event) => {
   event.preventDefault();
   load();
 });
+
+document.getElementById('print').addEventListener('click', () => window.print());
 
 document.getElementById('now').addEventListener('click', () => {
   setToNow();

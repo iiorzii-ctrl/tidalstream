@@ -113,7 +113,8 @@ body {
   padding-inline: 1rem;
 }
 
-.controls button#now {
+.controls button#now,
+.controls button#print {
   background: transparent;
   color: var(--accent);
   border-color: var(--line);
@@ -402,11 +403,13 @@ a {
 }
 
 .arrow-crop-view {
-  width: 132px;
-  height: 132px;
+  width: 120px;
+  height: 120px;
   border: 1px solid var(--line);
   border-radius: 8px;
   background-repeat: no-repeat;
+  /* 選んだ地点が枠の中央に来る。枠の大きさが変わっても崩れない */
+  background-position: calc(50% - var(--point-x, 0px)) calc(50% - var(--point-y, 0px));
   background-color: #eaf4fb; /* 海の色。読み込み前や欠けた縁を埋める */
   position: relative;
   overflow: hidden;
@@ -569,4 +572,184 @@ a {
   top: 0;
   background: var(--panel);
   color: var(--text-secondary);
+}
+
+/* ============================================================
+   印刷（A4 縦 1 枚に収める）
+   画面の見た目ではなく「紙で読めること」を優先する。
+   ダークテーマで表示していても、紙は白地に統一する。
+   ============================================================ */
+@page {
+  size: A4 portrait;
+  margin: 12mm 10mm;
+}
+
+@media print {
+  /* 地図や矢印は背景画像・背景色で描かれているので、印刷に確実に出す */
+  * {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* 紙は常に白地。暗いテーマのまま印刷して真っ黒になるのを防ぐ */
+  :root,
+  :root[data-theme='dark'],
+  :root[data-theme='light'] {
+    color-scheme: light;
+    --bg: #ffffff;
+    --panel: #ffffff;
+    --ink: #000000;
+    --muted: #444444;
+    --line: #999999;
+    --accent: #12608f;
+    --series-1: #1b5fa8;
+    --text-primary: #000000;
+    --text-secondary: #333333;
+    --text-muted: #555555;
+    --gridline: #cccccc;
+    --baseline: #888888;
+  }
+
+  body {
+    padding: 0;
+    background: #fff;
+    font-size: 9pt;
+    line-height: 1.35;
+  }
+
+  /* 操作用のものは紙に不要 */
+  .controls,
+  .candidates,
+  .point-actions,
+  .point-table,
+  .status,
+  .chart-tooltip {
+    display: none !important;
+  }
+
+  .bar h1 {
+    font-size: 13pt;
+    margin-bottom: 1mm;
+  }
+
+  .note {
+    font-size: 8pt;
+    margin: 0 0 2mm;
+  }
+
+  /* 3枚の潮流図を横一列のまま、紙幅に合わせて縮める */
+  .frames {
+    grid-template-columns: repeat(var(--columns, 3), 1fr);
+    gap: 3mm;
+    overflow: visible;
+    padding: 0;
+  }
+
+  .panel {
+    border: 1px solid var(--line);
+    border-radius: 2mm;
+    break-inside: avoid;
+  }
+
+  .panel-head {
+    padding: 1mm 2mm;
+    font-size: 8.5pt;
+  }
+
+  .panel-body {
+    padding: 1mm;
+    min-height: 0;
+  }
+
+  /* 選んだ地点だけ紙に残す（他の丸は紙面を汚すだけ） */
+  .station::before,
+  .stage:hover .station::before {
+    border-color: transparent;
+    background: transparent;
+  }
+
+  .station.is-selected::before {
+    border-color: #000;
+    box-shadow: 0 0 0 1.5px #fff;
+  }
+
+  /* 全点の数値が出ると矢印が隠れて図が読めなくなる。選んだ地点だけ残す */
+  .station-value {
+    opacity: 0;
+  }
+
+  .station.is-selected .station-value {
+    opacity: 1;
+    border: 0.3mm solid #000;
+    font-size: 7pt;
+  }
+
+  /* 地点の詳細 */
+  .point {
+    margin-top: 3mm;
+    padding: 2mm 0 0;
+    border: 0;
+    border-top: 1px solid var(--line);
+    border-radius: 0;
+    break-inside: avoid;
+  }
+
+  .point-head h2 {
+    font-size: 10.5pt;
+  }
+
+  .point-stats {
+    font-size: 8.5pt;
+    margin: 1mm 0;
+  }
+
+  .arrow-strip {
+    margin: 2mm 0;
+  }
+
+  .arrow-crops {
+    gap: 3mm;
+  }
+
+  /* 矢印は紙では小さめでも向きが読めるので、場所を節約する */
+  .arrow-crop-view {
+    width: 26mm;
+    height: 26mm;
+    border: 0.3mm solid var(--line);
+  }
+
+  .arrow-crop figcaption {
+    font-size: 7.5pt;
+  }
+
+  .chart {
+    margin-top: 1mm;
+    opacity: 1 !important;
+  }
+
+  .chart-svg {
+    max-height: 52mm;
+  }
+
+  .chart-caption {
+    font-size: 7.5pt;
+  }
+
+  /* 出典は利用ルール上も必要なので必ず紙に残す */
+  .foot {
+    margin-top: 3mm;
+    padding-top: 1.5mm;
+    border-top: 1px solid var(--line);
+    font-size: 7.5pt;
+    break-inside: avoid;
+  }
+
+  .foot a {
+    color: #000;
+    text-decoration: none;
+  }
+
+  a[href]::after {
+    content: '';
+  }
 }
