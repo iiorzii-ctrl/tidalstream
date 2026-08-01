@@ -37,8 +37,6 @@ const STRINGS = {
 
     'point.title': '地点の流速',
     'point.titleAt': '地点 ({x}, {y}) の流速',
-    'point.period': '期間',
-    'point.periodHours': '{n}時間',
     'point.showTable': '表で見る',
     'point.hideTable': '表を隠す',
     'point.clear': '選択を解除',
@@ -101,8 +99,6 @@ const STRINGS = {
 
     'point.title': 'Current speed at a station',
     'point.titleAt': 'Current speed at ({x}, {y})',
-    'point.period': 'Period',
-    'point.periodHours': '{n} h',
     'point.showTable': 'Show table',
     'point.hideTable': 'Hide table',
     'point.clear': 'Clear selection',

@@ -17,7 +17,9 @@ const pointStats = document.getElementById('pointStats');
 const pointTable = document.getElementById('pointTable');
 const chartEl = document.getElementById('chart');
 const arrowStrip = document.getElementById('arrowStrip');
-const seriesHoursEl = document.getElementById('seriesHours');
+// 推移の期間は12時間に固定する。1時間ぶん取るごとに上流で図が1枚生成されるため、
+// 選べるようにせず控えめな値で固定している。
+const SERIES_HOURS = 12;
 const csvLink = document.getElementById('csvLink');
 
 const CANDIDATE_KEY = 'tidalstream.candidateIndex';
@@ -338,7 +340,7 @@ async function loadSeries() {
   const query = currentQuery();
   query.set('x', String(selectedPoint.x));
   query.set('y', String(selectedPoint.y));
-  query.set('hours', seriesHoursEl.value);
+  query.set('hours', String(SERIES_HOURS));
   query.delete('count');
 
   csvLink.href = `/api/series.csv?${query}`;
@@ -433,7 +435,6 @@ document.getElementById('now').addEventListener('click', () => {
 });
 
 autoRefreshEl.addEventListener('change', scheduleAutoRefresh);
-seriesHoursEl.addEventListener('change', loadSeries);
 document.getElementById('clearPoint').addEventListener('click', clearPoint);
 
 document.getElementById('toggleTable').addEventListener('click', (event) => {
