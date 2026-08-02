@@ -41,14 +41,23 @@ let printing = false;
  * 変わってしまう（実測で PC 19px / iPhone 5px）。そこで viewBox を実際の
  * ピクセル幅に合わせ、常に等倍で描くことで文字サイズを一定に保つ。
  */
-// 印刷時のグラフの幅（横向き A4 で、矢印の列を除いた右側のおよその幅）。
-// 印刷レイアウトは画面の DOM を作り直さないので clientWidth は画面幅のまま。
-// そのため印刷直前にこの幅で描き直し、紙の上で等倍になるようにする。
-// 横向き A4 で、矢印の列を除いた右側の実寸（幅 約217mm = 820px、高さ 約39mm）。
-// 実際に印刷レイアウトで測った値。縦横比も枠に合わせないと、高さで頭打ちになって
-// 横に細くなってしまう。ここが紙の上での等倍になるので、文字も指定どおりの大きさになる。
-const PRINT_WIDTH = 820;
-const PRINT_HEIGHT = 148;
+// 印刷時のグラフの大きさ。
+// 版面の幅を紙に固定した（style.css の @media print）ので、印刷時の枠は端末に
+// よらず 714×129px になる。とはいえ数字を決め打ちにすると、レイアウトを直した
+// ときに気づかないままずれる。実際に描かれた枠より大きく描くと、その差のぶん
+// 縮められて文字が重なる（横軸の目盛と最大値のラベルがぶつかる）ため、
+// 印刷が始まった時点で枠を測り、測れなければ実測値を使う。
+const PRINT_FALLBACK_WIDTH = 714;
+const PRINT_FALLBACK_HEIGHT = 129;
+
+function printSize(container) {
+  const width = Math.round(container.getBoundingClientRect().width);
+  // 印刷用の指定がまだ効いていない場合（画面幅のまま）は実測値に逃がす
+  if (width < 400 || width > 1100) {
+    return { width: PRINT_FALLBACK_WIDTH, height: PRINT_FALLBACK_HEIGHT };
+  }
+  return { width, height: Math.round((width * PRINT_FALLBACK_HEIGHT) / PRINT_FALLBACK_WIDTH) };
+}
 
 function watchResize(container) {
   if (observer || typeof ResizeObserver === 'undefined') return;
@@ -62,7 +71,9 @@ function watchResize(container) {
 
   const toPrint = () => {
     printing = true;
-    if (current) draw(current.container, current.series, PRINT_WIDTH, PRINT_HEIGHT);
+    if (!current) return;
+    const size = printSize(current.container);
+    draw(current.container, current.series, size.width, size.height);
   };
   const toScreen = () => {
     printing = false;
@@ -152,11 +163,15 @@ function draw(container, series, forcedWidth, forcedHeight) {
   const peakX = xAt(peakIndex);
   const peakY = yAt(maxKnots);
   svg.append(el('circle', { cx: peakX, cy: peakY, r: 4, class: 'chart-peak' }));
+  // 端に寄ったときは内側に逃がす。右端は逃がしていたが左端は素通しで、最大値が
+  // 先頭に来ると（潮流では普通に起きる）縦軸の目盛の数字と重なっていた。
+  const nearStart = peakIndex < 3;
+  const nearEnd = peakIndex > points.length - 4;
   const peakLabel = el('text', {
-    x: Math.min(peakX, width - PAD.right - 30),
+    x: nearStart ? PAD.left : Math.min(peakX, width - PAD.right - 30),
     y: peakY - 12,
     class: 'chart-peak-label',
-    'text-anchor': peakIndex > points.length - 4 ? 'end' : 'middle',
+    'text-anchor': nearStart ? 'start' : nearEnd ? 'end' : 'middle',
   });
   peakLabel.textContent = `${maxKnots.toFixed(1)}kn`;
   svg.append(peakLabel);
