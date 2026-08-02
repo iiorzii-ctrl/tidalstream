@@ -82,6 +82,28 @@ export function assertAllowedUrl(rawUrl) {
   return url;
 }
 
+const IMAGE_PATH_RE = /\.(png|gif|jpe?g|webp)$/i;
+
+/**
+ * 画像として中継してよい URL か。
+ *
+ * 上流の CGI は「ページを返す」と「図を描く」が同じ入口なので、ここを素通しに
+ * すると /api/image 経由で任意の海域・日時の図を描かせられてしまい、海域と
+ * 日付の制限が意味を失う。実際の潮流図は
+ * `/TIDE/pred2/CurrPred/curr_img/01_2026080109_.png` のようにクエリを持たない
+ * 静的なファイルなので、その形のものだけ通す。
+ */
+export function assertProxyableImageUrl(rawUrl) {
+  const url = assertAllowedUrl(rawUrl);
+  if (url.search) {
+    throw new HttpError(403, '画像の中継はクエリの無い URL だけです');
+  }
+  if (!IMAGE_PATH_RE.test(url.pathname)) {
+    throw new HttpError(403, `画像ではない URL です: ${url.pathname}`);
+  }
+  return url;
+}
+
 export class HttpError extends Error {
   constructor(status, message, cause) {
     super(message, { cause });
@@ -161,7 +183,7 @@ export async function fetchPage(rawUrl, { referer, persist = false } = {}) {
  * ファイル名に日時が入っている画像は内容が変わらないのでディスクにも残す。
  */
 export async function fetchImage(rawUrl, { referer } = {}) {
-  const url = assertAllowedUrl(rawUrl).toString();
+  const url = assertProxyableImageUrl(rawUrl).toString();
   const cached = imageCache.get(url);
   if (cached) return { ...cached, cached: 'memory' };
 
@@ -178,6 +200,10 @@ export async function fetchImage(rawUrl, { referer } = {}) {
   const { buffer, contentType } = await gate.run(() =>
     request(url, { referer, accept: 'image/avif,image/webp,image/*,*/*;q=0.8' }),
   );
+  // 念のため、返ってきたものが画像であることも確かめる（HTML を中継しない）
+  if (contentType && !/^image\//i.test(contentType)) {
+    throw new HttpError(502, `画像が返りませんでした: ${contentType}`);
+  }
   const value = { buffer, contentType: contentType || 'application/octet-stream' };
   imageCache.set(url, value, IMAGE_CACHE_TTL_MS);
   if (persistable) await writeCache('images', url, { body: buffer, contentType: value.contentType });

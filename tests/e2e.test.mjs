@@ -82,6 +82,35 @@ test('許可外のホストは取りに行かない', async () => {
   await assert.rejects(() => fetcher.fetchPage('file:///etc/passwd'), /許可されていないスキーム/);
 });
 
+// 上流の CGI は「ページを返す」と「図を描く」が同じ入口なので、画像の中継を
+// 素通しにすると、そこから任意の海域・日時の図を描かせられてしまう。
+test('画像の中継を使って CGI を叩かせることはできない', async () => {
+  const host = `http://127.0.0.1:${stub.port}`;
+  const before = stub.requests.length;
+
+  await assert.rejects(
+    () => fetcher.fetchImage(`${host}/TIDE/pred2/cgi-bin/CurrPredCgi_K.cgi?area=05&yy=2099&hh=23`),
+    /クエリの無い URL/,
+  );
+  await assert.rejects(
+    () => fetcher.fetchImage(`${host}/TIDE/pred2/cgi-bin/CurrPredCgi_K.cgi`),
+    /画像ではない URL/,
+  );
+  // ついでに、画像以外のファイルの中継にも使わせない
+  await assert.rejects(() => fetcher.fetchImage(`${host}/copyright.html`), /画像ではない URL/);
+  await assert.rejects(() => fetcher.fetchImage(`${host}/img/curr.gif?x=1`), /クエリの無い URL/);
+
+  // どれも上流には届いていないこと
+  assert.equal(stub.requests.length, before);
+
+  // 本物の画像はこれまで通り通る
+  const image = await fetcher.fetchImage(
+    `${host}/TIDE/pred2/CurrPred/curr_img/01_2026080109_.png`,
+    { referer: stub.pageUrl },
+  );
+  assert.ok(image.buffer.length > 0);
+});
+
 test('同じ URL は再取得しない（キャッシュ）', async () => {
   const url = `http://127.0.0.1:${stub.port}/TIDE/pred2/img/curr_20260731090000.gif`;
   await fetcher.fetchImage(url, { referer: stub.pageUrl });
