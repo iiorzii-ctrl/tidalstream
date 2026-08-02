@@ -6,7 +6,7 @@ import { fileURLToPath } from 'node:url';
 import { COOKIE_NAME, TOKEN_PARAM, authMode, checkAccess, cookieHeader, tokenAuthEnabled, warnIfExposed } from './src/auth.mjs';
 import { clientKey, dateRangeMessage, isRangeAllowed, rateLimit } from './src/guard.mjs';
 import { AREAS, DEFAULTS, PAGE_URL, areaMessage, isAreaAllowed } from './src/config.mjs';
-import { HttpError, fetchImage, fetchPage } from './src/fetcher.mjs';
+import { HttpError, assertAllowedUrl, fetchImage, fetchPage } from './src/fetcher.mjs';
 import { collectFrames, collectSeries, nowInTokyo } from './src/frames.mjs';
 import { buildPageUrl, discoverForm, extractImageCandidates } from './src/scraper.mjs';
 
@@ -174,7 +174,9 @@ function csvCell(value) {
 async function handleImage(url, res) {
   const target = url.searchParams.get('u');
   if (!target) throw new HttpError(400, 'u パラメータが必要です');
-  const referer = url.searchParams.get('r') || PAGE_URL;
+  // Referer もそのまま送らずに確かめる（許可したホストのものだけ）
+  const requested = url.searchParams.get('r');
+  const referer = requested ? assertAllowedUrl(requested).toString() : PAGE_URL;
 
   const image = await fetchImage(target, { referer });
   res.writeHead(200, {

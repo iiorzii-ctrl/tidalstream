@@ -15,8 +15,8 @@ export function startStubUpstream() {
     const url = new URL(req.url, `http://${req.headers.host}`);
     requests.push({ path: url.pathname, query: Object.fromEntries(url.searchParams), headers: req.headers });
 
-    if (url.pathname.endsWith('.gif')) {
-      res.writeHead(200, { 'content-type': 'image/gif' });
+    if (/\.(gif|png)$/i.test(url.pathname)) {
+      res.writeHead(200, { 'content-type': url.pathname.endsWith('.png') ? 'image/png' : 'image/gif' });
       res.end(PIXEL);
       return;
     }
