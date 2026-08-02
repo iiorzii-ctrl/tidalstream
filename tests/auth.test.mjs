@@ -52,6 +52,9 @@ before(async () => {
       TIDALSTREAM_ALLOWED_HOSTS: '127.0.0.1',
       AUTH_USER: CREDENTIALS.user,
       AUTH_PASS: CREDENTIALS.pass,
+      // ここでは認証そのものを見たいので、締め出しは働かせない
+      // （締め出しの動きは lockout.test.mjs で確認する）
+      MAX_AUTH_FAILURES: '1000',
     },
     stdio: ['ignore', 'pipe', 'pipe'],
   });

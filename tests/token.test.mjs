@@ -36,6 +36,7 @@ before(async () => {
       AUTH_USER: '',
       AUTH_PASS: '',
       RATE_LIMIT_PER_MIN: '1000',
+      MAX_AUTH_FAILURES: '1000', // 締め出しの動きは lockout.test.mjs で確認する
     },
     stdio: ['ignore', 'pipe', 'pipe'],
   });
