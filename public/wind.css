@@ -1,0 +1,197 @@
+/* 風予報の画面。配色は style.css の変数をそのまま使う。 */
+
+.wind-main {
+  display: grid;
+  gap: 1rem;
+  max-width: 60rem;
+  margin: 0 auto;
+}
+
+.wind-warning {
+  max-width: 60rem;
+  margin: 0 auto 0.75rem;
+  padding: 0.6rem 0.9rem;
+  border: 1px solid var(--error);
+  border-radius: 0.4rem;
+  background: color-mix(in srgb, var(--error) 10%, var(--panel));
+  color: var(--ink);
+}
+
+.wind-mapwrap {
+  padding: 0.5rem;
+  border: 1px solid var(--line);
+  border-radius: 0.5rem;
+  background: var(--panel);
+}
+
+.wind-map {
+  display: block;
+  width: 100%;
+  height: auto;
+  /* 縦長の湾なので、画面の高さに収まる範囲で大きく出す */
+  max-height: 65vh;
+}
+
+.wind-sea {
+  fill: var(--sea);
+  stroke: var(--rule);
+}
+
+.wind-schematic-note {
+  margin: 0.4rem 0 0;
+  color: var(--muted);
+  font-size: 0.8rem;
+  text-align: right;
+}
+
+.wind-label,
+.wind-name {
+  text-anchor: middle;
+  paint-order: stroke fill; /* 海の上でも読めるよう、文字の周りを縁取る */
+  stroke: var(--panel);
+  stroke-width: 0.0016;
+  stroke-linejoin: round;
+}
+
+.wind-label {
+  fill: var(--ink);
+  font-weight: 700;
+}
+
+.wind-name {
+  fill: var(--muted);
+}
+
+.wind-leader {
+  stroke: var(--muted);
+  opacity: 0.55;
+}
+
+.wind-station.is-link {
+  cursor: pointer;
+}
+
+.wind-station.is-link:hover .wind-label,
+.wind-station.is-link:focus-visible .wind-label {
+  fill: var(--accent);
+  text-decoration: underline;
+}
+
+/* --- 時刻のスライダ --- */
+
+.wind-timebar {
+  padding: 0.75rem 1rem 1.25rem;
+  border: 1px solid var(--line);
+  border-radius: 0.5rem;
+  background: var(--panel);
+}
+
+.wind-timebar-head {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.5rem;
+}
+
+.wind-time {
+  flex: 1;
+  font-size: 1.15rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+}
+
+.wind-play {
+  width: 2.4rem;
+  height: 2.4rem;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  background: var(--panel);
+  color: var(--ink);
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.wind-play:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.wind-units {
+  display: flex;
+  gap: 0.25rem;
+}
+
+.wind-units button {
+  padding: 0.3rem 0.7rem;
+  border: 1px solid var(--line);
+  border-radius: 0.3rem;
+  background: var(--panel);
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.wind-units button.is-on {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: var(--panel);
+}
+
+.wind-slider {
+  width: 100%;
+  accent-color: var(--accent);
+}
+
+.wind-ticks {
+  position: relative;
+  height: 1rem;
+}
+
+.wind-tick {
+  position: absolute;
+  transform: translateX(-50%);
+  color: var(--muted);
+  font-size: 0.75rem;
+  white-space: nowrap;
+}
+
+/* --- 一覧 --- */
+
+.wind-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 0.5rem;
+}
+
+.wind-table caption {
+  padding: 0.5rem;
+  color: var(--muted);
+  font-size: 0.85rem;
+  text-align: left;
+}
+
+.wind-table th,
+.wind-table td {
+  padding: 0.4rem 0.6rem;
+  border-top: 1px solid var(--line);
+  text-align: left;
+  font-variant-numeric: tabular-nums;
+}
+
+.wind-table thead th {
+  color: var(--muted);
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.wind-table tbody th {
+  font-weight: 600;
+}
+
+@media (max-width: 30rem) {
+  .wind-map {
+    max-height: 55vh;
+  }
+}

@@ -10,6 +10,7 @@ const STRINGS = {
     'app.lede': '海上保安庁「潮流推算」ページの図を、指定時刻から1時間ごとに横並びで表示します。',
     'lang.toggle': 'English',
     'lang.toggleAria': 'Switch to English',
+    'nav.wind': '風予報',
 
     'controls.area': '海域',
     'controls.date': '日付',
@@ -66,6 +67,7 @@ const STRINGS = {
       'Shows charts from the Japan Coast Guard tidal current prediction page, side by side at hourly steps.',
     'lang.toggle': '日本語',
     'lang.toggleAria': '日本語に切り替える',
+    'nav.wind': 'Wind forecast',
 
     'controls.area': 'Area',
     'controls.date': 'Date',

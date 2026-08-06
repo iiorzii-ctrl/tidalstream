@@ -172,6 +172,32 @@ test('HTTP エンドポイントが一通り動く', async () => {
 
     const missing = await fetch(`${base}/nope.js`);
     assert.equal(missing.status, 404);
+
+    // 風予報。設定が無いので、黙って作り物を返さずに 503 で断ること
+    const windUnset = await fetch(`${base}/api/wind`);
+    assert.equal(windUnset.status, 503);
+    assert.match((await windUnset.json()).error, /UMITEN_/);
+
+    // ?sample=1 を明示したときだけ作り物のデータが出る
+    const wind = await fetch(`${base}/api/wind?sample=1`);
+    assert.equal(wind.status, 200);
+    const forecast = await wind.json();
+    assert.equal(forecast.schemaVersion, 1);
+    assert.equal(forecast.source.kind, 'sample');
+    assert.equal(forecast.units.speed, 'm/s');
+    // どの地点の series も times と同じ長さ（スライダの添字に使うため）
+    assert.ok(forecast.stations.every((s) => s.series.length === forecast.times.length));
+
+    const csv = await fetch(`${base}/api/wind.csv?sample=1`);
+    assert.equal(csv.status, 200);
+    assert.match(csv.headers.get('content-type'), /text\/csv/);
+    const lines = (await csv.text()).trim().split('\r\n');
+    assert.equal(lines[0], 'time,station_id,station_name,lat,lon,speed_mps,gust_mps,direction_deg,direction_text');
+    assert.equal(lines.length, 1 + forecast.stations.length * forecast.times.length);
+
+    const windPage = await fetch(`${base}/wind.html`);
+    assert.equal(windPage.status, 200);
+    assert.match(await windPage.text(), /風予報/);
   } finally {
     child.kill();
   }

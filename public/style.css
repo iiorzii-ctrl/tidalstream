@@ -84,6 +84,12 @@ body {
   gap: 0.15rem;
 }
 
+.bar-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
 .eyebrow {
   margin: 0;
   font-size: 0.8rem;
