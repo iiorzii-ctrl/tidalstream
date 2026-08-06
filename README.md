@@ -105,6 +105,70 @@ Render に置く場合は `render.yaml` の `UMITEN_*` に画面から値を入�
 出す前に伏せ字にしています（`redactSecrets`）。認証付きで取得したページは
 **ディスクの永続キャッシュには残しません**（メモリに 10 分だけ）。
 
+### 受け渡しの形（表示側との境目）
+
+あとで **Streamlit（Python）側から同じデータを使えるように**、取り込みと表示の
+あいだに言語に依らない形を1つ決めてあります（`src/forecast.mjs`）。表示側は
+上流の HTML も資格情報も知らずに、この形だけを見ればよいようにしています。
+
+```
+取り込み (src/umiten.mjs) → 正規形 (src/forecast.mjs) ─┬─ /api/wind      … ブラウザの地図
+                                                      ├─ /api/wind.csv  … pandas
+                                                      └─ scripts/export-wind.mjs … ファイル
+```
+
+決めごと:
+
+| 項目 | 決めた内容 | 理由 |
+| --- | --- | --- |
+| 時刻 | `2026-08-06T18:00:00+09:00` 形式 | 予報が「日本時間の何時」で出るものなので、Z に直さない |
+| 風速・突風 | m/s（`units` に明記） | ノットは表示側で `× 1.94384`。単位を決め打ちさせない |
+| 風向 | 度数。**風が吹いてくる方角**（0=北, 90=東） | 気象の慣習。矢印を描くときは 180 度回す |
+| 位置 | 緯度経度 | 画像のピクセル座標にすると地図の実装を替えられなくなる |
+| 欠測 | `null` | 地点ごとに時刻の穴を埋めてあり、どの地点の `series` も `times` と同じ長さ・同じ並び。スライダの位置をそのまま添字に使える |
+| 版 | `schemaVersion` | 形を変えたときに表示側が気付けるように |
+
+`/api/wind.csv` は **1行 = 1地点 × 1時刻** の平たい形（`pandas.read_csv` に
+そのまま渡せる形）で出ます。
+
+```
+time,station_id,station_name,lat,lon,speed_mps,gust_mps,direction_deg,direction_text
+2026-08-06T18:00:00+09:00,yokohama,横浜,35.452,139.664,5.5,8.3,199,SSW
+```
+
+### Streamlit から使う
+
+`examples/streamlit_app.py` に、地図・時刻スライダ・地点ごとの一覧まで含む例を
+置いてあります。**資格情報は Node 側の環境変数に置いたままで、Python 側には
+持たせません。**
+
+```bash
+pip install streamlit pandas pydeck
+streamlit run examples/streamlit_app.py                 # 既定で http://127.0.0.1:3000/api/wind
+WIND_URL=https://<ホスト>/api/wind streamlit run examples/streamlit_app.py
+```
+
+自分で書く場合はこれだけです。
+
+```python
+import pandas as pd
+df = pd.read_csv('http://127.0.0.1:3000/api/wind.csv', parse_dates=['time'])
+```
+
+### 上流がまだ取り込めない間の作り物データ
+
+予報サイトは契約者専用で開発環境から届かないことがあるため、**表示側だけ先に
+作れるよう**に作り物のデータを出せます。値に意味はありません。
+
+```bash
+UMITEN_SAMPLE=1 node server.mjs        # /api/wind が作り物を返す
+node scripts/export-wind.mjs --sample  # ファイルに書き出す
+```
+
+作り物のときは `source.kind` が `"sample"` になるので、表示側はそれを見て
+「サンプル」と明示してください（本物と取り違えると危ないため）。指定しない
+限り作り物は出ません。設定が無ければ 503 で断ります。
+
 ### 上流の構造を調べる
 
 このサイトは契約者専用で、開発環境からは届かないことがあります。実際に見える
@@ -273,6 +337,8 @@ node scripts/inspect.mjs 01
 | `GET /api/series?area=01&date=2026-08-01&hour=9&x=190&y=395` | 指定地点の流速の推移（12 時間ぶん） |
 | `GET /api/series.csv?...` | 同じ内容を CSV で（Excel 用に BOM 付き） |
 | `GET /api/areas` | 使える海域コードの一覧（既定では東京湾のみ） |
+| `GET /api/wind` | 東京湾沿岸の風の予報（正規形の JSON。`?sample=1` で作り物） |
+| `GET /api/wind.csv` | 同じ内容を 1行=1地点×1時刻 の CSV で（pandas 用） |
 | `GET /api/image?u=<画像URL>&r=<参照元ページ>` | 画像の中継（許可ホストのみ） |
 | `GET /api/debug?area=01` | 上流ページの解析結果をそのまま返す |
 
