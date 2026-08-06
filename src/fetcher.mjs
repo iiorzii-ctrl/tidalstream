@@ -66,7 +66,7 @@ class TtlCache {
 const pageCache = new TtlCache(120);
 const imageCache = new TtlCache(120);
 
-export function assertAllowedUrl(rawUrl) {
+export function assertAllowedUrl(rawUrl, allowedHosts = ALLOWED_HOSTS) {
   let url;
   try {
     url = new URL(rawUrl);
@@ -76,7 +76,7 @@ export function assertAllowedUrl(rawUrl) {
   if (url.protocol !== 'https:' && url.protocol !== 'http:') {
     throw new HttpError(400, `許可されていないスキームです: ${url.protocol}`);
   }
-  if (!ALLOWED_HOSTS.has(url.hostname)) {
+  if (!allowedHosts.has(url.hostname)) {
     throw new HttpError(403, `許可されていないホストです: ${url.hostname}`);
   }
   return url;
@@ -112,7 +112,7 @@ export class HttpError extends Error {
   }
 }
 
-async function request(url, { referer, accept } = {}) {
+async function request(url, { referer, accept, headers } = {}) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), UPSTREAM_TIMEOUT_MS);
   try {
@@ -124,13 +124,18 @@ async function request(url, { referer, accept } = {}) {
         'accept-language': 'ja,en;q=0.8',
         accept: accept ?? 'text/html,application/xhtml+xml,*/*;q=0.8',
         ...(referer ? { referer } : {}),
+        ...headers,
       },
     });
     if (!response.ok) {
-      throw new HttpError(
+      const error = new HttpError(
         response.status === 404 ? 404 : 502,
         `上流が ${response.status} ${response.statusText} を返しました: ${url}`,
       );
+      // 呼び出し側が上流の応答そのものを見て判断できるようにしておく
+      // （401 を「資格情報が違う」と言い換えるなど）
+      error.upstreamStatus = response.status;
+      throw error;
     }
     const buffer = Buffer.from(await response.arrayBuffer());
     return { buffer, contentType: response.headers.get('content-type') ?? '', finalUrl: response.url || url };
@@ -149,8 +154,8 @@ async function request(url, { referer, accept } = {}) {
  * HTML ページを取得してデコードする。
  * 日時を明示した URL は結果が変わらないのでディスクにも残す（persist）。
  */
-export async function fetchPage(rawUrl, { referer, persist = false } = {}) {
-  const url = assertAllowedUrl(rawUrl).toString();
+export async function fetchPage(rawUrl, { referer, persist = false, headers, allowedHosts } = {}) {
+  const url = assertAllowedUrl(rawUrl, allowedHosts).toString();
   const cached = pageCache.get(url);
   if (cached) return { ...cached, cached: 'memory' };
 
@@ -169,7 +174,7 @@ export async function fetchPage(rawUrl, { referer, persist = false } = {}) {
     }
   }
 
-  const { buffer, contentType, finalUrl } = await gate.run(() => request(url, { referer }));
+  const { buffer, contentType, finalUrl } = await gate.run(() => request(url, { referer, headers }));
   const { text, charset } = decodeBody(buffer, contentType);
   const value = { html: text, charset, url: finalUrl, contentType };
   pageCache.set(url, value, PAGE_CACHE_TTL_MS);

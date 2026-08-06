@@ -1,5 +1,7 @@
 # Render 用の設定。リポジトリを繋ぐとこの内容で web サービスが作られる。
-# AUTH_USER / AUTH_PASS は Render の画面から値を入れる（sync: false のため）。
+# sync: false の項目は Render の画面から値を入れる（リポジトリには残らない）。
+# 港湾気象予報を使う場合は UMITEN_* の3つにも値を入れる。URL そのものが
+# 契約者ごとの秘密なので、値をここに書かないこと。
 services:
   - type: web
     name: tidalstream
@@ -17,4 +19,10 @@ services:
       - key: AUTH_USER
         sync: false
       - key: AUTH_PASS
+        sync: false
+      - key: UMITEN_INDEX_URL
+        sync: false
+      - key: UMITEN_USER
+        sync: false
+      - key: UMITEN_PASS
         sync: false
