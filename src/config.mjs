@@ -21,6 +21,10 @@ export const PAGE_CACHE_TTL_MS = 10 * 60 * 1000;
 export const IMAGE_CACHE_TTL_MS = 30 * 60 * 1000;
 export const UPSTREAM_TIMEOUT_MS = 20_000;
 
+// 上流ページの構造をそのまま返す確認用エンドポイント（/api/debug）を開けるか。
+// 上流の生の HTML を返すので、アクセス制限なしで公開する場合は閉じておく。
+export const DEBUG_ENABLED = (process.env.TIDALSTREAM_DEBUG ?? '') === '1';
+
 export const USER_AGENT =
   'tidalstream/1.0 (personal tide-chart viewer; contact: repository owner)';
 

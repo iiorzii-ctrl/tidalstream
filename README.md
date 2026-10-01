@@ -37,6 +37,7 @@ node server.mjs          # または npm start
 | `RATE_LIMIT_PER_MIN` | 90 | 同一の相手から1分あたり受け付ける数 |
 | `MAX_AUTH_FAILURES` | 5 | 何回間違えたら締め出すか（下記） |
 | `AUTH_LOCK_MINUTES` | 15 | 締め出す長さ（分） |
+| `TIDALSTREAM_DEBUG` | — | `1` で `/api/debug` を開ける（既定は 404）|
 
 ### パスワードの総当たり対策
 
@@ -229,7 +230,7 @@ node scripts/inspect.mjs 01
 | `GET /api/series.csv?...` | 同じ内容を CSV で（Excel 用に BOM 付き） |
 | `GET /api/areas` | 使える海域コードの一覧（既定では東京湾のみ） |
 | `GET /api/image?u=<画像URL>&r=<参照元ページ>` | 画像の中継（許可ホストのみ） |
-| `GET /api/debug?area=01` | 上流ページの解析結果をそのまま返す |
+| `GET /api/debug?area=01` | 上流ページの解析結果をそのまま返す（`TIDALSTREAM_DEBUG=1` のときだけ。既定は 404）|
 
 ## 取得先への配慮
 
