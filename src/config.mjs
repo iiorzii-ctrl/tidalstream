@@ -25,8 +25,11 @@ export const UPSTREAM_TIMEOUT_MS = 20_000;
 // 上流の生の HTML を返すので、アクセス制限なしで公開する場合は閉じておく。
 export const DEBUG_ENABLED = (process.env.TIDALSTREAM_DEBUG ?? '') === '1';
 
+// 上流（海上保安庁）側から見て、どこの誰が取りに来ているか辿れるようにしておく。
+// 迷惑をかけていた場合に連絡先が無いと、いきなり遮断されても文句が言えない。
 export const USER_AGENT =
-  'tidalstream/1.0 (personal tide-chart viewer; contact: repository owner)';
+  process.env.TIDALSTREAM_USER_AGENT ??
+  'tidalstream/1.0 (personal tide-chart viewer; +https://github.com/iiorzii-ctrl/tidalstream)';
 
 // ページ内にフォームが見つからなかった場合に使うクエリ名のフォールバック。
 // 実ページを確認できたら FORM_ROLE_HINTS 側で上書きするのが望ましい。

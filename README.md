@@ -241,6 +241,8 @@ node scripts/inspect.mjs 01
 - 上流への同時接続は 2 本まで
 - 20 秒でタイムアウト
 - 連絡先を含む User-Agent を送る
+  （`tidalstream/1.0 (personal tide-chart viewer; +https://github.com/iiorzii-ctrl/tidalstream)`。
+  `TIDALSTREAM_USER_AGENT` で差し替え可能）
 - メモリキャッシュ（ページ 10 分・画像 30 分）
 - **ディスクへの永続キャッシュ**（下記）
 - 推移の期間は 6 時間に固定（下記）
