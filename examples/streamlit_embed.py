@@ -11,8 +11,8 @@
 import streamlit as st
 import streamlit.components.v1 as components
 
-# 埋め込む潮流ビューアの URL（Render のもの）に書き換える
-TIDAL_URL = "https://tidalstream-xxxx.onrender.com"
+# 埋め込む潮流ビューアの URL
+TIDAL_URL = "https://tidalstream.onrender.com"
 
 # 【1】必ず wide にする。
 # 潮流ビューアは幅 900px 未満だと図を縦1列に積む作りなので、Streamlit の

@@ -1,5 +1,17 @@
 # Render 用の設定。リポジトリを繋ぐとこの内容で web サービスが作られる。
-# AUTH_USER / AUTH_PASS は Render の画面から値を入れる（sync: false のため）。
+#
+# アクセス制限は付けていない（URL を知っていれば誰でも見られる）。
+# ここに key を書くと、sync: false（値は画面で入れる）であっても「その変数が
+# 存在する」という宣言は残り、デプロイのたびにサービス定義へ戻される。
+# 画面から消したつもりの AUTH_USER / AUTH_PASS が復活するのはこのため。
+# 制限を掛けたくなったら、ここに key を足したうえで画面から値を入れる。
+#
+#   - key: AUTH_USER     … Basic 認証（AUTH_PASS と両方そろって有効）
+#     sync: false
+#   - key: AUTH_PASS
+#     sync: false
+#   - key: ACCESS_TOKEN  … 秘密のリンク（?k=<値> で一度開く）
+#     sync: false
 services:
   - type: web
     name: tidalstream
@@ -14,7 +26,3 @@ services:
         value: '22'
       - key: HOST
         value: 0.0.0.0
-      - key: AUTH_USER
-        sync: false
-      - key: AUTH_PASS
-        sync: false
