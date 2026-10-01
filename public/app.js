@@ -17,9 +17,9 @@ const pointStats = document.getElementById('pointStats');
 const pointTable = document.getElementById('pointTable');
 const chartEl = document.getElementById('chart');
 const arrowStrip = document.getElementById('arrowStrip');
-// 推移の期間は12時間に固定する。1時間ぶん取るごとに上流で図が1枚生成されるため、
+// 推移の期間は6時間に固定する。1時間ぶん取るごとに上流で図が1枚生成されるため、
 // 選べるようにせず控えめな値で固定している。
-const SERIES_HOURS = 12;
+const SERIES_HOURS = 6;
 const csvLink = document.getElementById('csvLink');
 
 const CANDIDATE_KEY = 'tidalstream.candidateIndex';

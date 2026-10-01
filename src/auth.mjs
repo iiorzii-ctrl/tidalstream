@@ -104,9 +104,12 @@ export function cookieHeader({ secure }) {
 export function warnIfExposed(host) {
   if (authEnabled) return null;
   if (host === '127.0.0.1' || host === 'localhost' || host === '::1') return null;
+  // 意図して公開することもあるので、指示ではなく事実を伝えるにとどめる。
+  // 制限を付けたくなったときのために、付け方だけ添えておく。
   return (
-    `警告: ${host} で待ち受けていますがアクセス制限がありません。` +
-    ' 外部に公開する場合は ACCESS_TOKEN か AUTH_USER/AUTH_PASS を設定してください。'
+    `注意: ${host} で待ち受けており、アクセス制限はありません（URL を知っていれば誰でも見られます）。` +
+    ' 上流への歯止め（海域・日付の範囲・流量制限）は制限の有無にかかわらず効いています。' +
+    ' 見る人を絞る場合は ACCESS_TOKEN か AUTH_USER/AUTH_PASS を設定してください。'
   );
 }
 
