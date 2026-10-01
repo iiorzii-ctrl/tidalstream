@@ -2,3 +2,7 @@ node_modules/
 .cache/
 *.log
 .DS_Store
+
+# Python の中間ファイル（examples/ の構文確認で出る）
+__pycache__/
+*.pyc
