@@ -3,6 +3,8 @@
 // 画面の固定文言は HTML 側の data-i18n 属性で差し替え、
 // 動的に組み立てる文言は t() を使う。
 
+import { readStored, writeStored } from './storage.js';
+
 const STRINGS = {
   ja: {
     'app.title': '潮流推算ビューア',
@@ -10,6 +12,16 @@ const STRINGS = {
     'app.lede': '海上保安庁「潮流推算」ページの図を、指定時刻から1時間ごとに横並びで表示します。',
     'lang.toggle': 'English',
     'lang.toggleAria': 'Switch to English',
+
+    'links.toggle': 'リンク',
+    'links.shareLabel': 'このページのリンク',
+    'links.copy': 'コピー',
+    'links.copied': 'コピーしました',
+    'links.copyFailed': 'コピーできませんでした。長押しで選んでください',
+    'links.shareHint': '同僚に渡すときはこのURLを伝えてください。開くだけで見られます。',
+    'links.source': '潮流推算（海上保安庁 海洋情報部）',
+    'links.tide': '潮汐推算（海上保安庁 海洋情報部）',
+    'links.repo': 'このページの作り（GitHub）',
 
     'controls.area': '海域',
     'controls.date': '日付',
@@ -67,6 +79,16 @@ const STRINGS = {
     'lang.toggle': '日本語',
     'lang.toggleAria': '日本語に切り替える',
 
+    'links.toggle': 'Links',
+    'links.shareLabel': 'Link to this page',
+    'links.copy': 'Copy',
+    'links.copied': 'Copied',
+    'links.copyFailed': 'Could not copy — select the text instead',
+    'links.shareHint': 'Share this URL with colleagues. Opening it is all they need to do.',
+    'links.source': 'Tidal current prediction (Japan Coast Guard)',
+    'links.tide': 'Tide prediction (Japan Coast Guard)',
+    'links.repo': 'How this page works (GitHub)',
+
     'controls.area': 'Area',
     'controls.date': 'Date',
     'controls.hour': 'Start time',
@@ -119,7 +141,7 @@ const STRINGS = {
 const KEY = 'tidalstream.lang';
 
 function detect() {
-  const saved = localStorage.getItem(KEY);
+  const saved = readStored(KEY);
   if (saved === 'ja' || saved === 'en') return saved;
   // 日本語圏のブラウザなら日本語、それ以外は英語で始める
   return (navigator.language ?? '').toLowerCase().startsWith('ja') ? 'ja' : 'en';
@@ -137,7 +159,7 @@ export function t(key, params) {
 
 export function setLang(next) {
   lang = next === 'en' ? 'en' : 'ja';
-  localStorage.setItem(KEY, lang);
+  writeStored(KEY, lang);
   document.documentElement.lang = lang;
   applyStatic();
 }

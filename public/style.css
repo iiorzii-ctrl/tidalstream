@@ -120,6 +120,82 @@ body {
   border-color: var(--accent);
 }
 
+.bar-actions {
+  display: flex;
+  gap: 0.4rem;
+  flex-shrink: 0;
+}
+
+/* リンクメニュー。見出しの下に開く */
+.links {
+  margin: 0.6rem 0 0;
+  padding: 0.75rem 0.9rem;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 3px;
+}
+
+/* display 指定が hidden 属性を打ち消さないようにする */
+.links[hidden] {
+  display: none;
+}
+
+.links-label {
+  display: block;
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+  margin-bottom: 0.35rem;
+}
+
+.links-share-row {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.links-url {
+  font: inherit;
+  font-size: 0.95rem;
+  flex: 1 1 18rem;
+  min-width: 0;
+  padding: 0.35rem 0.5rem;
+  color: var(--ink);
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 3px;
+}
+
+.links-share-row button {
+  font: inherit;
+  font-size: 0.95rem;
+  padding: 0.35rem 1.1rem;
+  cursor: pointer;
+  color: #fff;
+  background: var(--accent);
+  border: 1px solid var(--accent);
+  border-radius: 3px;
+  white-space: nowrap;
+}
+
+.links-hint {
+  margin: 0.4rem 0 0;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.links-list {
+  margin: 0.75rem 0 0;
+  padding: 0.75rem 0 0 1.1rem;
+  border-top: 1px solid var(--line);
+  font-size: 0.9rem;
+}
+
+.links-list li + li {
+  margin-top: 0.3rem;
+}
+
 @media print {
   .lang-toggle {
     display: none;
@@ -710,6 +786,8 @@ a {
 
   /* 操作用のものは紙に不要 */
   .controls,
+  .links,
+  .bar-actions,
   .candidates,
   .point-actions,
   .point-table,
