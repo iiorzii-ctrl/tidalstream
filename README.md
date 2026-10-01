@@ -338,7 +338,7 @@ Streamlit などの別アプリに iframe で差し込めます。フレーム�
 import streamlit.components.v1 as components
 
 st.set_page_config(layout="wide")   # 既定幅だと図が縦1列になる
-components.iframe("https://<ホスト>", height=900, scrolling=True)
+components.iframe("https://tidalstream.onrender.com", height=900, scrolling=True)
 ```
 
 埋め込むときに引っかかりやすいのは次の3点です。
