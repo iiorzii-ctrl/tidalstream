@@ -3,6 +3,8 @@
 // 画面の固定文言は HTML 側の data-i18n 属性で差し替え、
 // 動的に組み立てる文言は t() を使う。
 
+import { readStored, writeStored } from './storage.js';
+
 const STRINGS = {
   ja: {
     'app.title': '潮流推算ビューア',
@@ -139,7 +141,7 @@ const STRINGS = {
 const KEY = 'tidalstream.lang';
 
 function detect() {
-  const saved = localStorage.getItem(KEY);
+  const saved = readStored(KEY);
   if (saved === 'ja' || saved === 'en') return saved;
   // 日本語圏のブラウザなら日本語、それ以外は英語で始める
   return (navigator.language ?? '').toLowerCase().startsWith('ja') ? 'ja' : 'en';
@@ -157,7 +159,7 @@ export function t(key, params) {
 
 export function setLang(next) {
   lang = next === 'en' ? 'en' : 'ja';
-  localStorage.setItem(KEY, lang);
+  writeStored(KEY, lang);
   document.documentElement.lang = lang;
   applyStatic();
 }

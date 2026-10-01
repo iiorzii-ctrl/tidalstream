@@ -1,5 +1,6 @@
 import { renderSeriesChart, renderSeriesTable } from './chart.js';
 import { applyStatic, lang, t, toggleLang } from './i18n.js';
+import { readStored, removeStored, writeStored } from './storage.js';
 
 const form = document.getElementById('controls');
 const framesEl = document.getElementById('frames');
@@ -24,7 +25,7 @@ const csvLink = document.getElementById('csvLink');
 
 const CANDIDATE_KEY = 'tidalstream.candidateIndex';
 const POINT_KEY = 'tidalstream.point';
-let candidateIndex = Number(localStorage.getItem(CANDIDATE_KEY) ?? 0) || 0;
+let candidateIndex = Number(readStored(CANDIDATE_KEY) ?? 0) || 0;
 let availableAreas = [];
 let lastData = null; // 言語切り替え時に再描画するために保持する
 let selectedPoint = readSelectedPoint();
@@ -40,7 +41,7 @@ let seriesInFlight = null;
 
 function readSelectedPoint() {
   try {
-    const saved = JSON.parse(localStorage.getItem(POINT_KEY) ?? 'null');
+    const saved = JSON.parse(readStored(POINT_KEY) ?? 'null');
     return saved && Number.isFinite(saved.x) && Number.isFinite(saved.y) ? saved : null;
   } catch {
     return null;
@@ -279,7 +280,7 @@ function renderStations(stage, img, frame) {
 function selectPoint(point) {
   selectedPoint = { ...point, area: areaEl.value };
   pointArea = areaEl.value;
-  localStorage.setItem(POINT_KEY, JSON.stringify(selectedPoint));
+  writeStored(POINT_KEY, JSON.stringify(selectedPoint));
   document.querySelectorAll('.station').forEach((dot) => {
     dot.classList.toggle('is-selected', dot.dataset.id === `${point.x},${point.y}`);
   });
@@ -289,7 +290,7 @@ function selectPoint(point) {
 function clearPoint() {
   selectedPoint = null;
   pointArea = null;
-  localStorage.removeItem(POINT_KEY);
+  removeStored(POINT_KEY);
   document.querySelectorAll('.station.is-selected').forEach((d) => d.classList.remove('is-selected'));
   arrowStrip.hidden = true;
   pointSection.hidden = true;
@@ -403,7 +404,7 @@ function buildCandidatePicker(frame) {
 
   select.addEventListener('change', () => {
     candidateIndex = Number(select.value);
-    localStorage.setItem(CANDIDATE_KEY, String(candidateIndex));
+    writeStored(CANDIDATE_KEY, String(candidateIndex));
     load();
   });
 

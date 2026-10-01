@@ -328,6 +328,33 @@ HTML に書かれているので画像を受け取る必要はありませんが
 キャッシュを消したいときは `.cache/` を削除してください。なお Render の
 無料枠はファイルシステムが揮発するため、停止のたびにキャッシュは失われます。
 
+## 他のページに埋め込む
+
+Streamlit などの別アプリに iframe で差し込めます。フレーム表示を拒否する
+ヘッダ（`X-Frame-Options` など）は出していません。貼り付けて使える例を
+`examples/streamlit_embed.py` に置いてあります。
+
+```python
+import streamlit.components.v1 as components
+
+st.set_page_config(layout="wide")   # 既定幅だと図が縦1列になる
+components.iframe("https://<ホスト>", height=900, scrolling=True)
+```
+
+埋め込むときに引っかかりやすいのは次の3点です。
+
+**幅。** 900px 未満では図を縦1列に積む作りなので、Streamlit は `layout="wide"`
+にします。既定幅（730px ほど）のままだと3枚が縦に並びます。
+
+**保存。** iPad の Safari は、埋め込まれたページの `localStorage` を
+third-party 扱いで拒否し、**触っただけで例外**を投げます。素で呼ぶとモジュールの
+読み込みごと失敗して画面が真っ白になるため、読み書きは `public/storage.js`
+を通し、保存できなくても表示は続くようにしてあります。
+
+**初回の遅さ。** Render の無料枠は、しばらく使われないとサーバが眠ります。
+眠ったあとの最初の1回だけ 30〜60 秒ほどかかり、その間 iframe は白いままです。
+止まったように見えるので、ひとこと添えておくと問い合わせが減ります。
+
 ## 利用規約について
 
 上流サイトは
