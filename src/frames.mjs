@@ -115,7 +115,7 @@ export async function collectFrames({
 export async function collectSeries({
   area = DEFAULTS.area,
   start,
-  hours = 12,
+  hours = 6,
   stepHours = DEFAULTS.stepHours,
   x,
   y,

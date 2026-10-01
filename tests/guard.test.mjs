@@ -14,6 +14,10 @@ import {
   isRangeAllowed,
   rateLimit,
   recordAuthFailure,
+  recordUpstream,
+  upstreamAllowed,
+  RATE_LIMIT_PER_MIN,
+  UPSTREAM_LIMIT_PER_MIN,
   resetAuthFailures,
   resetRateLimit,
 } from '../src/guard.mjs';
@@ -147,6 +151,45 @@ test('締め出しは相手ごと', () => {
 test('残り時間を分で伝える', () => {
   assert.match(authLockMessage(15 * 60), /15分/);
   assert.match(authLockMessage(30), /1分/); // 1分未満でも 0分 とは言わない
+});
+
+test('上限は実測より厳しく、かつ普通の操作は通る値にしてある', () => {
+  // 実ブラウザで立て続けに操作した最悪の60秒が「合計35回・上流23回」
+  assert.equal(RATE_LIMIT_PER_MIN, 60);
+  assert.equal(UPSTREAM_LIMIT_PER_MIN, 30);
+  assert.ok(RATE_LIMIT_PER_MIN > 35, '1人が忙しく操作しても弾かれない');
+  assert.ok(UPSTREAM_LIMIT_PER_MIN > 23, '上流側も同様');
+  assert.ok(UPSTREAM_LIMIT_PER_MIN < RATE_LIMIT_PER_MIN, '上流側のほうが厳しい');
+});
+
+test('上流に届きうるものは別枠で数える', () => {
+  resetRateLimit();
+  const now = 1_800_000_000_000;
+  for (let i = 0; i < UPSTREAM_LIMIT_PER_MIN; i += 1) {
+    assert.equal(upstreamAllowed('a', now).allowed, true, `${i + 1}回目`);
+    recordUpstream('a', now);
+  }
+  assert.equal(upstreamAllowed('a', now).allowed, false);
+  // 全体の上限（60）にはまだ余裕がある＝静的ファイルは引き続き返せる
+  assert.equal(rateLimit('a', now).allowed, true);
+  // 相手が違えば影響しない
+  assert.equal(upstreamAllowed('b', now).allowed, true);
+});
+
+test('数えなければ消費しない（キャッシュから返した場合）', () => {
+  resetRateLimit();
+  const now = 1_800_000_000_000;
+  // 判定だけ何度繰り返しても減らない
+  for (let i = 0; i < 100; i += 1) assert.equal(upstreamAllowed('c', now).allowed, true);
+  assert.equal(upstreamAllowed('c', now).remaining, UPSTREAM_LIMIT_PER_MIN);
+});
+
+test('上流の数も分が変わると数え直す', () => {
+  resetRateLimit();
+  const now = 1_800_000_000_000;
+  for (let i = 0; i < UPSTREAM_LIMIT_PER_MIN; i += 1) recordUpstream('d', now);
+  assert.equal(upstreamAllowed('d', now).allowed, false);
+  assert.equal(upstreamAllowed('d', now + 60_000).allowed, true);
 });
 
 test('Cookie を読み取れる', () => {

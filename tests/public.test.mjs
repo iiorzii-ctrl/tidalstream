@@ -93,3 +93,42 @@ test('巡回は断ったまま', async () => {
   const response = await fetch(`${base}/robots.txt`);
   assert.equal((await response.text()).trim(), 'User-agent: *\nDisallow: /');
 });
+
+test('推移の期間は6時間を超えて頼めない', async () => {
+  const from = { 'x-forwarded-for': '198.51.100.150' };
+  const response = await fetch(`${base}/api/series?area=01&x=190&y=395&hours=24`, { headers: from });
+  assert.equal(response.status, 200);
+  const series = await response.json();
+  assert.equal(series.hours, 6);
+  assert.equal(series.points.length, 6);
+});
+
+test('上流に届きうるリクエストは別枠の上限で断る', async () => {
+  const from = { 'x-forwarded-for': '198.51.100.151' };
+  const codes = [];
+  // 画像はキャッシュから返ると数えないので、毎回ちがう図を頼む
+  for (let i = 0; i < 32; i += 1) {
+    const r = await fetch(`${base}/api/frames?area=01&hour=${i % 24}&count=1`, { headers: from });
+    codes.push(r.status);
+  }
+  assert.equal(codes[0], 200);
+  assert.equal(codes[29], 200, '30回目までは通る');
+  assert.equal(codes[30], 429, '31回目から断る');
+  assert.equal(codes[31], 429);
+
+  // 全体の上限にはまだ余裕があるので、静的ファイルは返せる
+  assert.equal((await fetch(`${base}/style.css`, { headers: from })).status, 200);
+});
+
+test('キャッシュから返した画像は上限を消費しない', async () => {
+  const from = { 'x-forwarded-for': '198.51.100.152' };
+  const frames = await (await fetch(`${base}/api/frames?area=01&count=1`, { headers: from })).json();
+  const image = frames.frames[0].proxiedImageUrl;
+  // 1回目で取り込み、以後はキャッシュから返る
+  assert.equal((await fetch(base + image, { headers: from })).status, 200);
+  for (let i = 0; i < 40; i += 1) {
+    const r = await fetch(base + image, { headers: from });
+    assert.equal(r.status, 200, `${i + 1}回目`);
+    assert.notEqual(r.headers.get('x-upstream-cache'), 'miss');
+  }
+});

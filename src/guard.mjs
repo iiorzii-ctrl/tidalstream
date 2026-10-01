@@ -11,8 +11,27 @@ import { addHours, nowInTokyo } from './frames.mjs';
 /** 今日から前後何日まで許すか */
 export const MAX_DATE_OFFSET_DAYS = Number(process.env.MAX_DATE_OFFSET_DAYS ?? 7);
 
-/** 1分あたり、同一の相手から受け付けるリクエスト数 */
-export const RATE_LIMIT_PER_MIN = Number(process.env.RATE_LIMIT_PER_MIN ?? 90);
+/**
+ * 1分あたり、同一の相手から受け付けるリクエスト数。
+ *
+ * 2段構えにしている。静的ファイルまで同じ上限で縛ると、職場のように複数人が
+ * 同じ出口 IP から使う場合に普通の操作が弾かれてしまう。一方で上流に届きうる
+ * ものは絞りたいので、そちらに別の小さい上限を置く。
+ *
+ * 数字の根拠（実ブラウザで操作して計測した1分あたりの実績）:
+ *   初回の表示 10回（上流に触りうるもの 4回）
+ *   地点をクリック 1回（1回）／時刻を変える 5回（5回）／枚数を変える 5回（5回）
+ *   再読み込み 14回（8回）
+ *   立て続けに操作した最悪の60秒で 合計35回・上流に触りうるもの23回
+ * 1人が忙しく操作してこの程度なので、数人が同時に使っても収まる余裕を見て決めた。
+ */
+export const RATE_LIMIT_PER_MIN = Number(process.env.RATE_LIMIT_PER_MIN ?? 60);
+
+/**
+ * そのうち、上流に届きうるリクエスト（/api/frames・/api/series・/api/image）の上限。
+ * 画像はキャッシュから返したぶんを数えないので、同じ図を見直すだけなら消費しない。
+ */
+export const UPSTREAM_LIMIT_PER_MIN = Number(process.env.UPSTREAM_LIMIT_PER_MIN ?? 30);
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -69,9 +88,37 @@ export function rateLimit(key, now = Date.now(), limit = RATE_LIMIT_PER_MIN) {
   return { allowed: entry.count <= limit, remaining: Math.max(0, limit - entry.count) };
 }
 
+/**
+ * 上流に届きうるリクエストの数え上げ。
+ * 判定（allowed）と記録（record）を分けてあるのは、キャッシュから返せた場合に
+ * 数えないため。実際に上流へ取りに行ったときだけ record を呼ぶ。
+ */
+const upstreamCounters = new Map();
+
+export function upstreamAllowed(key, now = Date.now(), limit = UPSTREAM_LIMIT_PER_MIN) {
+  const minute = Math.floor(now / 60_000);
+  const entry = upstreamCounters.get(key);
+  const count = entry && entry.minute === minute ? entry.count : 0;
+  return { allowed: count < limit, remaining: Math.max(0, limit - count) };
+}
+
+export function recordUpstream(key, now = Date.now()) {
+  const minute = Math.floor(now / 60_000);
+  const entry = upstreamCounters.get(key);
+  if (!entry || entry.minute !== minute) {
+    if (upstreamCounters.size > 500) {
+      for (const [k, v] of upstreamCounters) if (v.minute < minute) upstreamCounters.delete(k);
+    }
+    upstreamCounters.set(key, { minute, count: 1 });
+    return;
+  }
+  entry.count += 1;
+}
+
 /** テスト用 */
 export function resetRateLimit() {
   counters.clear();
+  upstreamCounters.clear();
 }
 
 /**
