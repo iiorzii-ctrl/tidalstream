@@ -132,10 +132,17 @@ https://<ホスト>/?k=<ACCESS_TOKEN と同じ文字列>
 1. このリポジトリを GitHub に push する
 2. [dashboard.render.com](https://dashboard.render.com) で **New → Blueprint**
 3. このリポジトリを選ぶ。`render.yaml` が読まれ、内容が表示される
-4. `AUTH_USER` と `AUTH_PASS` の入力欄が出るので値を入れる
-   （パスワードは推測されにくい長いものにしてください）
-5. Apply を押す。数分で `https://tidalstream-xxxx.onrender.com` のような URL が出る
-6. iPad や職場の PC でその URL を開き、手順4の値でログインする
+4. Apply を押す。数分で `https://tidalstream.onrender.com` のような URL が出る
+5. iPad や職場の PC でその URL を開く（アクセス制限は付けていないのでそのまま見られる）
+
+アクセス制限を掛ける場合は、`render.yaml` の `envVars` に `AUTH_USER` /
+`AUTH_PASS`（または `ACCESS_TOKEN`）の key を足したうえで、値を Render の画面から
+入れます。
+
+**逆に、制限を外すときは画面で消すだけでは足りません。** `render.yaml` に key が
+書かれていると、`sync: false`（値は画面で入れる）であっても「その変数が存在する」
+という宣言は残り、デプロイのたびにサービス定義へ戻されます。画面から消したはずの
+変数が復活する場合は、まず `render.yaml` から key を外してください。
 
 `render.yaml` の中身:
 
