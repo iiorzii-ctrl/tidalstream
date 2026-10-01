@@ -11,6 +11,16 @@ const STRINGS = {
     'lang.toggle': 'English',
     'lang.toggleAria': 'Switch to English',
 
+    'links.toggle': 'リンク',
+    'links.shareLabel': 'このページのリンク',
+    'links.copy': 'コピー',
+    'links.copied': 'コピーしました',
+    'links.copyFailed': 'コピーできませんでした。長押しで選んでください',
+    'links.shareHint': '同僚に渡すときはこのURLを伝えてください。開くだけで見られます。',
+    'links.source': '潮流推算（海上保安庁 海洋情報部）',
+    'links.tide': '潮汐推算（海上保安庁 海洋情報部）',
+    'links.repo': 'このページの作り（GitHub）',
+
     'controls.area': '海域',
     'controls.date': '日付',
     'controls.hour': '開始時刻',
@@ -66,6 +76,16 @@ const STRINGS = {
       'Shows charts from the Japan Coast Guard tidal current prediction page, side by side at hourly steps.',
     'lang.toggle': '日本語',
     'lang.toggleAria': '日本語に切り替える',
+
+    'links.toggle': 'Links',
+    'links.shareLabel': 'Link to this page',
+    'links.copy': 'Copy',
+    'links.copied': 'Copied',
+    'links.copyFailed': 'Could not copy — select the text instead',
+    'links.shareHint': 'Share this URL with colleagues. Opening it is all they need to do.',
+    'links.source': 'Tidal current prediction (Japan Coast Guard)',
+    'links.tide': 'Tide prediction (Japan Coast Guard)',
+    'links.repo': 'How this page works (GitHub)',
 
     'controls.area': 'Area',
     'controls.date': 'Date',

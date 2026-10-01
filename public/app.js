@@ -448,6 +448,52 @@ document.getElementById('toggleTable').addEventListener('click', (event) => {
   event.currentTarget.textContent = t(open ? 'point.hideTable' : 'point.showTable');
 });
 
+// --- リンクメニュー
+// 共有する URL は、いまの日時が入ったハッシュを落として組み立てる。
+// ハッシュ付きを渡すと、受け取った人が古い日時のまま開いてしまうため。
+const linksEl = document.getElementById('links');
+const linksToggle = document.getElementById('linksToggle');
+const shareUrlEl = document.getElementById('shareUrl');
+const copyLinkEl = document.getElementById('copyLink');
+
+shareUrlEl.value = `${location.origin}${location.pathname}`;
+
+function setLinksOpen(open) {
+  linksEl.hidden = !open;
+  linksToggle.setAttribute('aria-expanded', String(open));
+}
+
+linksToggle.addEventListener('click', () => setLinksOpen(linksEl.hidden));
+
+// 開いている間は、外側を触るか Esc で閉じる
+document.addEventListener('click', (event) => {
+  if (linksEl.hidden) return;
+  if (linksEl.contains(event.target) || linksToggle.contains(event.target)) return;
+  setLinksOpen(false);
+});
+document.addEventListener('keydown', (event) => {
+  if (event.key === 'Escape' && !linksEl.hidden) {
+    setLinksOpen(false);
+    linksToggle.focus();
+  }
+});
+
+copyLinkEl.addEventListener('click', async () => {
+  const done = (key) => {
+    copyLinkEl.textContent = t(key);
+    setTimeout(() => (copyLinkEl.textContent = t('links.copy')), 2000);
+  };
+  // 選択状態にしておくと、コピーできなかった場合も手で操作できる
+  shareUrlEl.select();
+  try {
+    await navigator.clipboard.writeText(shareUrlEl.value);
+    done('links.copied');
+  } catch {
+    // クリップボードを触れない場合（古い端末や権限なし）は選択だけ残す
+    done(document.execCommand?.('copy') ? 'links.copied' : 'links.copyFailed');
+  }
+});
+
 // 言語切り替え。取得済みのデータを使い直すので、上流には取りに行かない。
 document.getElementById('langToggle').addEventListener('click', () => {
   toggleLang();
